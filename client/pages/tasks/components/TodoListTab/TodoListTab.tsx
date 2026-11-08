@@ -502,20 +502,17 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     <p className="mt-1 text-sm font-semibold capitalize text-slate-800">{task.assigned_category}</p>
                   </div>
                 )}
-                {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
+                {taskAttachments.get(task.id)?.some((attachment) => attachment.fileType === "video") && (
                   <div className="col-span-2 border-t border-slate-200 pt-3">
                     <AttachmentList
-                      attachments={taskAttachments.get(task.id)!}
+                      attachments={taskAttachments.get(task.id)!.filter((attachment) => attachment.fileType === "video")}
                       compact={true}
                     />
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 flex items-center border-t border-slate-100 pt-3">
-                <Badge className={`${getPriorityColor(task.priority)} rounded-full px-2.5 text-xs font-semibold`}>
-                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
-                </Badge>
+              <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -523,11 +520,20 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     onTaskSelect(task.id);
                     onTabChange("live-chat");
                   }}
-                  className="ml-auto rounded-lg text-slate-600 hover:bg-amber-50 hover:text-sheraton-navy"
+                  className="rounded-lg text-slate-600 hover:bg-amber-50 hover:text-sheraton-navy"
                 >
                   <MessageSquare className="mr-1.5 h-4 w-4" />
                   Chat
                 </Button>
+                {taskAttachments.get(task.id)?.some((attachment) => attachment.fileType !== "video") && (
+                  <AttachmentList
+                    attachments={taskAttachments.get(task.id)!.filter((attachment) => attachment.fileType !== "video")}
+                    compact={true}
+                  />
+                )}
+                <Badge className={`${getPriorityColor(task.priority)} ml-auto rounded-full px-2.5 text-xs font-semibold`}>
+                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                </Badge>
               </div>
             </CardContent>
           </Card>
