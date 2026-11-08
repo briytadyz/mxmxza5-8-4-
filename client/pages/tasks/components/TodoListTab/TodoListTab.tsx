@@ -514,7 +514,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
 
               <div className="mt-4 flex items-center border-t border-slate-100 pt-3">
                 <Badge className={`${getPriorityColor(task.priority)} rounded-full px-2.5 text-xs font-semibold`}>
-                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
                 </Badge>
                 <Button
                   size="sm"
