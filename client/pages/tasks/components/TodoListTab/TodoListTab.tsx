@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../../components/ui/card";
+import { Card, CardContent } from "../../../../components/ui/card";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Badge } from "../../../../components/ui/badge";
@@ -425,96 +420,84 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
       <div
         className={
           viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
             : "space-y-4"
         }
       >
         {filteredTasks.map((task) => (
           <Card
             key={task.id}
-            className={`${getStatusColor(task.status)} hover:shadow-lg transition-shadow overflow-hidden`}
+            className={`${getStatusColor(task.status)} rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all overflow-hidden`}
           >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4 pb-4 border-b">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="p-2 bg-white rounded-lg flex-shrink-0">
-                    <StatusIcon status={task.status} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-xs font-semibold text-sheraton-gold uppercase tracking-wide">
-                        {task.id}
-                      </p>
-                      {(task as any).is_from_complaint && (
-                        <Badge className="bg-orange-100 text-orange-800 text-xs">
-                          <Tag className="h-3 w-3 mr-1" />
-                          From Complaint
-                        </Badge>
-                      )}
-                    </div>
-                    <h3 className="font-bold text-sheraton-navy mt-1 line-clamp-2 hover:text-sheraton-gold transition-colors">
-                      {task.title}
-                    </h3>
-                  </div>
+            <CardContent className="p-5 sm:p-6">
+              <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-50">
+                  <StatusIcon status={task.status} />
                 </div>
-                <Badge className={`${getPriorityColor(task.priority)} font-semibold flex-shrink-0 ml-2`}>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      {task.id}
+                    </p>
+                    {(task as any).is_from_complaint && (
+                      <Badge className="bg-orange-50 text-orange-700 text-[10px]">
+                        <Tag className="mr-1 h-3 w-3" />
+                        Complaint
+                      </Badge>
+                    )}
+                  </div>
+                  <h3 className="line-clamp-2 font-semibold leading-snug text-sheraton-navy">
+                    {task.title}
+                  </h3>
+                </div>
+                <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0 rounded-full px-2.5 text-xs font-semibold`}>
                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                 </Badge>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+              <p className="mt-4 min-h-10 line-clamp-2 text-sm leading-relaxed text-slate-600">
                 {task.description}
               </p>
 
-              <div className="space-y-3 mb-5 text-sm">
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-slate-50/80 p-3.5">
                 {task.category && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">CATEGORY</span>
-                    <span className="font-semibold text-gray-900 capitalize">{task.category}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Category</p>
+                    <p className="mt-1 truncate text-sm font-medium capitalize text-slate-800" title={task.category}>{task.category}</p>
                   </div>
                 )}
                 {task.assignee_name && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">ASSIGNED TO</span>
-                    <span className="font-semibold text-gray-900">{task.assignee_name}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Assigned to</p>
+                    <p className="mt-1 truncate text-sm font-medium text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
                   </div>
                 )}
                 {task.due_date && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">DUE DATE</span>
-                    <span className="font-semibold text-gray-900">
-                      {new Date(task.due_date).toLocaleDateString()}
-                    </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Due date</p>
+                    <p className="mt-1 text-sm font-medium text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
                 )}
                 {task.estimated_time && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">EST. TIME</span>
-                    <span className="font-semibold text-gray-900">{task.estimated_time}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Est. time</p>
+                    <p className="mt-1 text-sm font-medium text-slate-800">{task.estimated_time}</p>
                   </div>
                 )}
                 {(task as any).budget && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">BUDGET</span>
-                    <span className="font-semibold text-green-700">${parseFloat((task as any).budget).toFixed(2)}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Budget</p>
+                    <p className="mt-1 text-sm font-semibold text-emerald-700">${parseFloat((task as any).budget).toFixed(2)}</p>
                   </div>
                 )}
                 {task.assigned_category && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs font-medium">TYPE</span>
-                    <Badge
-                      className={
-                        task.assigned_category === "internal"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-purple-100 text-purple-800"
-                      }
-                    >
-                      {task.assigned_category === "internal" ? "Internal" : "External"}
-                    </Badge>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Type</p>
+                    <p className="mt-1 text-sm font-medium capitalize text-slate-800">{task.assigned_category}</p>
                   </div>
                 )}
                 {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
-                  <div className="pt-2 border-t mt-3">
+                  <div className="col-span-2 border-t border-slate-200 pt-3">
                     <AttachmentList
                       attachments={taskAttachments.get(task.id)!}
                       compact={true}
@@ -523,11 +506,10 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 pt-4 border-t flex-wrap">
-                <Badge variant="outline" className="bg-white">
+              <div className="mt-4 flex items-center border-t border-slate-100 pt-3">
+                <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-2.5 font-medium text-slate-600">
                   {getStatusLabel(task.status)}
                 </Badge>
-
                 <Button
                   size="sm"
                   variant="ghost"
@@ -535,9 +517,9 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     onTaskSelect(task.id);
                     onTabChange("live-chat");
                   }}
-                  className="ml-auto hover:bg-sheraton-gold hover:text-white"
+                  className="ml-auto rounded-lg text-slate-600 hover:bg-amber-50 hover:text-sheraton-navy"
                 >
-                  <MessageSquare className="h-4 w-4 mr-1" />
+                  <MessageSquare className="mr-1.5 h-4 w-4" />
                   Chat
                 </Button>
               </div>
