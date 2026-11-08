@@ -427,7 +427,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
         {filteredTasks.map((task) => (
           <Card
             key={task.id}
-            className={`${getStatusColor(task.status)} rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all overflow-hidden`}
+            className={`${getStatusColor(task.status)} rounded-xl overflow-hidden`}
           >
             <CardContent className="p-5 sm:p-6">
               <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
@@ -436,17 +436,17 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       {task.id}
                     </p>
                     {(task as any).is_from_complaint && (
-                      <Badge className="bg-orange-50 text-orange-700 text-[10px]">
+                      <Badge className="bg-orange-50 text-orange-700 text-xs">
                         <Tag className="mr-1 h-3 w-3" />
                         Complaint
                       </Badge>
                     )}
                   </div>
-                  <h3 className="line-clamp-2 font-semibold leading-snug text-sheraton-navy">
+                  <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy">
                     {task.title}
                   </h3>
                 </div>
@@ -462,38 +462,38 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-slate-50/80 p-3.5">
                 {task.category && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Category</p>
-                    <p className="mt-1 truncate text-sm font-medium capitalize text-slate-800" title={task.category}>{task.category}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Category</p>
+                    <p className="mt-1 truncate text-sm font-semibold capitalize text-slate-800" title={task.category}>{task.category}</p>
                   </div>
                 )}
                 {task.assignee_name && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Assigned to</p>
-                    <p className="mt-1 truncate text-sm font-medium text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assigned to</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
                   </div>
                 )}
                 {task.due_date && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Due date</p>
-                    <p className="mt-1 text-sm font-medium text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Due date</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
                 )}
                 {task.estimated_time && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Est. time</p>
-                    <p className="mt-1 text-sm font-medium text-slate-800">{task.estimated_time}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Est. time</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{task.estimated_time}</p>
                   </div>
                 )}
                 {(task as any).budget && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Budget</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Budget</p>
                     <p className="mt-1 text-sm font-semibold text-emerald-700">${parseFloat((task as any).budget).toFixed(2)}</p>
                   </div>
                 )}
                 {task.assigned_category && (
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Type</p>
-                    <p className="mt-1 text-sm font-medium capitalize text-slate-800">{task.assigned_category}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Type</p>
+                    <p className="mt-1 text-sm font-semibold capitalize text-slate-800">{task.assigned_category}</p>
                   </div>
                 )}
                 {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
