@@ -13,7 +13,8 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import MuxVideoPlayer from "./MuxVideoPlayer";
-import FullscreenMediaViewer, { FullscreenMediaItem } from "./FullscreenMediaViewer";
+import FullscreenMediaViewer, { type FullscreenMediaItem } from "./FullscreenMediaViewer";
+import { toast } from "../hooks/use-toast";
 
 interface Attachment {
   id?: string;
@@ -138,15 +139,28 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
     fileSize: getFileSizeFromAttachment(attachment),
   }));
 
-  const handleDownload = (attachment: Attachment) => {
+  const handleDownload = async (attachment: Attachment) => {
     const url = getFileUrlFromAttachment(attachment);
-    if (url) {
+    if (!url) return;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Download request failed");
+
+      const downloadUrl = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
-      link.href = url;
+      link.href = downloadUrl;
       link.download = getFileNameFromAttachment(attachment);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    } catch {
+      toast({
+        title: "Download failed",
+        description: "Unable to download this attachment.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -222,7 +236,10 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDownload(attachment)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleDownload(attachment);
+                        }}
                         className="flex-shrink-0 text-gray-500 hover:text-gray-900"
                         title="Download file"
                       >
@@ -319,7 +336,10 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDownload(attachment)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleDownload(attachment);
+                      }}
                       className="flex-shrink-0 ml-2"
                       title="Download file"
                     >
