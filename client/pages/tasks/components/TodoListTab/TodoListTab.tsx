@@ -526,10 +526,12 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                   Chat
                 </Button>
                 {taskAttachments.get(task.id)?.some((attachment) => attachment.fileType !== "video") && (
-                  <AttachmentList
-                    attachments={taskAttachments.get(task.id)!.filter((attachment) => attachment.fileType !== "video")}
-                    compact={true}
-                  />
+                  <div className="flex flex-1 justify-center">
+                    <AttachmentList
+                      attachments={taskAttachments.get(task.id)!.filter((attachment) => attachment.fileType !== "video")}
+                      compact={true}
+                    />
+                  </div>
                 )}
                 <Badge className={`${getPriorityColor(task.priority)} ml-auto rounded-full px-2.5 text-xs font-semibold`}>
                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
