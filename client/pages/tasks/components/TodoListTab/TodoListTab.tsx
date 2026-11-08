@@ -441,10 +441,9 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-                      <StatusIcon status={task.status} />
-                      <span>{task.status === "todo" ? "To Do" : getStatusLabel(task.status)}</span>
-                    </div>
+                    <span className="text-sm font-semibold text-slate-600">
+                      {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                    </span>
                     {(task as any).is_from_complaint && (
                       <Badge className="bg-orange-50 text-orange-700 text-xs">
                         <Tag className="mr-1 h-3 w-3" />
@@ -456,8 +455,9 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     {task.title}
                   </h3>
                 </div>
-                <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0 rounded-full px-2.5 text-xs font-semibold`}>
-                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                <Badge variant="outline" className="flex-shrink-0 gap-1.5 rounded-full border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-600">
+                  <StatusIcon status={task.status} />
+                  {task.status === "todo" ? "To Do" : getStatusLabel(task.status)}
                 </Badge>
               </div>
 
