@@ -439,9 +439,6 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
           >
             <CardContent className="p-5 sm:p-6">
               <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-50">
-                  <StatusIcon status={task.status} />
-                </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -515,9 +512,10 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               </div>
 
               <div className="mt-4 flex items-center border-t border-slate-100 pt-3">
-                <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-2.5 font-medium text-slate-600">
-                  {getStatusLabel(task.status)}
-                </Badge>
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                  <StatusIcon status={task.status} />
+                  <span>{task.status === "todo" ? "To Do" : getStatusLabel(task.status)}</span>
+                </div>
                 <Button
                   size="sm"
                   variant="ghost"
