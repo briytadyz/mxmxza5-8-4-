@@ -31,6 +31,14 @@ import { getPriorityColor, getStatusColor, getStatusLabel } from "../../utils/ta
 import StatusIcon from "../StatusIcon";
 import { AppRole, isWorkerRole } from "../../../../lib/roles";
 
+const metadataToneByStatus: Record<string, { panel: string; label: string }> = {
+  todo: { panel: "bg-amber-50/70", label: "text-amber-700" },
+  in_progress: { panel: "bg-blue-50/70", label: "text-blue-700" },
+  in_review: { panel: "bg-violet-50/70", label: "text-violet-700" },
+  completed: { panel: "bg-emerald-50/70", label: "text-emerald-700" },
+  default: { panel: "bg-slate-50/80", label: "text-slate-500" },
+};
+
 interface TodoListTabProps {
   userRole: AppRole | null;
   currentUserProfile: UserProfile | null;
@@ -459,40 +467,40 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                 {task.description}
               </p>
 
-              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-slate-50/80 p-3.5">
+              <div className={`mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-3.5`}>
                 {task.category && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Category</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>category</p>
                     <p className="mt-1 truncate text-sm font-semibold capitalize text-slate-800" title={task.category}>{task.category}</p>
                   </div>
                 )}
                 {task.assignee_name && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Assigned to</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>assigned to</p>
                     <p className="mt-1 truncate text-sm font-semibold text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
                   </div>
                 )}
                 {task.due_date && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Due date</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>due date</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
                 )}
                 {task.estimated_time && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Est. time</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>est. time</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800">{task.estimated_time}</p>
                   </div>
                 )}
                 {(task as any).budget && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Budget</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>budget</p>
                     <p className="mt-1 text-sm font-semibold text-emerald-700">${parseFloat((task as any).budget).toFixed(2)}</p>
                   </div>
                 )}
                 {task.assigned_category && (
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Type</p>
+                    <p className={`text-xs font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>type</p>
                     <p className="mt-1 text-sm font-semibold capitalize text-slate-800">{task.assigned_category}</p>
                   </div>
                 )}
