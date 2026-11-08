@@ -443,14 +443,17 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                   <StatusIcon status={task.status} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  {(task as any).is_from_complaint && (
-                    <div className="mb-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Task #{task.id.slice(0, 8)}
+                    </p>
+                    {(task as any).is_from_complaint && (
                       <Badge className="bg-orange-50 text-orange-700 text-xs">
                         <Tag className="mr-1 h-3 w-3" />
                         Complaint
                       </Badge>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy">
                     {task.title}
                   </h3>
