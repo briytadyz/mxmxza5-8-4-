@@ -441,9 +441,9 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0 rounded-full px-2.5 text-xs font-semibold`}>
-                      {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                    </Badge>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Task #{task.id.slice(0, 8)}
+                    </p>
                     {(task as any).is_from_complaint && (
                       <Badge className="bg-orange-50 text-orange-700 text-xs">
                         <Tag className="mr-1 h-3 w-3" />
@@ -513,9 +513,9 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               </div>
 
               <div className="mt-4 flex items-center border-t border-slate-100 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Task #{task.id.slice(0, 8)}
-                </p>
+                <Badge className={`${getPriorityColor(task.priority)} rounded-full px-2.5 text-xs font-semibold`}>
+                  {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                </Badge>
                 <Button
                   size="sm"
                   variant="ghost"
