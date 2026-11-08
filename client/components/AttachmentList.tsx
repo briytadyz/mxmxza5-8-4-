@@ -31,6 +31,7 @@ interface Attachment {
 interface AttachmentListProps {
   attachments: Attachment[];
   compact?: boolean;
+  popupPlacement?: "top" | "bottom";
 }
 
 // Get icon based on file extension or fileType
@@ -94,7 +95,7 @@ const getFileExtension = (fileName: string) => {
   return fileName.split(".").pop()?.toUpperCase() || "FILE";
 };
 
-const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false }) => {
+const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom" }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!attachments || attachments.length === 0) {
@@ -171,7 +172,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
             </button>
 
             {expanded && (
-              <div className="absolute z-50 top-full mt-2 left-0 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 space-y-2">
+              <div className={`absolute z-50 ${popupPlacement === "top" ? "bottom-full mb-2 left-1/2 -translate-x-1/2 w-72" : "top-full mt-2 left-0 w-80"} bg-white border border-gray-200 rounded-lg shadow-lg p-4 space-y-2`}>
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold text-sm text-gray-900">Attachments</h4>
                   <button
