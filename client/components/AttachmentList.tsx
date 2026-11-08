@@ -13,6 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import MuxVideoPlayer from "./MuxVideoPlayer";
+import FullscreenMediaViewer, { FullscreenMediaItem } from "./FullscreenMediaViewer";
 
 interface Attachment {
   id?: string;
@@ -97,6 +98,7 @@ const getFileExtension = (fileName: string) => {
 
 const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom" }) => {
   const [expanded, setExpanded] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   if (!attachments || attachments.length === 0) {
     return null;
@@ -129,6 +131,13 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
     return attachment.fileType || attachment.type;
   };
 
+  const previewItems: FullscreenMediaItem[] = otherAttachments.map((attachment) => ({
+    url: getFileUrlFromAttachment(attachment),
+    type: getFileTypeFromAttachment(attachment) || "file",
+    name: getFileNameFromAttachment(attachment),
+    fileSize: getFileSizeFromAttachment(attachment),
+  }));
+
   const handleDownload = (attachment: Attachment) => {
     const url = getFileUrlFromAttachment(attachment);
     if (url) {
@@ -143,6 +152,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
 
   if (compact) {
     return (
+      <>
       <div className="space-y-3">
         {/* Videos section */}
         {videos.length > 0 && (
@@ -197,9 +207,13 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                           {getFileIcon(fileName, fileType)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewIndex(otherAttachments.indexOf(attachment))}
+                            className="block w-full truncate text-left text-sm font-medium text-gray-900 hover:underline"
+                          >
                             {fileName}
-                          </p>
+                          </button>
                           {fileSize && (
                             <p className="text-xs text-gray-500">{formatFileSize(fileSize)}</p>
                           )}
@@ -222,6 +236,12 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
           </div>
         )}
       </div>
+      <FullscreenMediaViewer
+        items={previewItems}
+        selectedIndex={previewIndex}
+        onSelectedIndexChange={setPreviewIndex}
+      />
+      </>
     );
   }
 
