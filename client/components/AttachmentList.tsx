@@ -34,6 +34,7 @@ interface AttachmentListProps {
   attachments: Attachment[];
   compact?: boolean;
   popupPlacement?: "top" | "bottom";
+  popupAllAttachments?: boolean;
 }
 
 // Get icon based on file extension or fileType
@@ -97,7 +98,7 @@ const getFileExtension = (fileName: string) => {
   return fileName.split(".").pop()?.toUpperCase() || "FILE";
 };
 
-const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom" }) => {
+const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom", popupAllAttachments = false }) => {
   const [expanded, setExpanded] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -120,18 +121,18 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
   }
 
   // Separate videos from other attachments
-  const videos = attachments.filter(att => {
+  const videos = popupAllAttachments ? [] : attachments.filter(att => {
     const fileType = att.fileType || att.type;
     return fileType === 'video';
   });
 
-  const otherAttachments = attachments.filter(att => {
+  const otherAttachments = popupAllAttachments ? attachments : attachments.filter(att => {
     const fileType = att.fileType || att.type;
     return fileType !== 'video';
   });
 
   const getFileNameFromAttachment = (attachment: Attachment): string => {
-    return attachment.originalName || attachment.name || "Attachment";
+    return attachment.originalName || attachment.filename || attachment.name || "Attachment";
   };
 
   const getFileSizeFromAttachment = (attachment: Attachment): number | undefined => {

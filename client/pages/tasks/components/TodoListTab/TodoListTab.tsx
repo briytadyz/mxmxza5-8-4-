@@ -190,24 +190,13 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                   )}
 
                   {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
-                    <div className={`mt-4 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-4`}>
-                      <p className={`mb-2 text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>
-                        Attachments ({taskAttachments.get(task.id)!.length})
-                      </p>
-                      <div className="space-y-1">
-                        {taskAttachments.get(task.id)!.map((attachment) => (
-                          <a
-                            key={attachment.attachmentId}
-                            href={attachment.publicUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block truncate text-sm text-slate-700 hover:underline dark:text-slate-200"
-                            title={attachment.filename || attachment.originalName}
-                          >
-                            {attachment.filename || attachment.originalName}
-                          </a>
-                        ))}
-                      </div>
+                    <div className="mt-4 flex justify-center">
+                      <AttachmentList
+                        attachments={taskAttachments.get(task.id)!}
+                        compact={true}
+                        popupPlacement="top"
+                        popupAllAttachments={true}
+                      />
                     </div>
                   )}
 
