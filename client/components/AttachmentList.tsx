@@ -210,8 +210,10 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
     if (downloadUrl.protocol !== "https:" ||
       !(downloadUrl.hostname.endsWith(".backblazeb2.com") || downloadUrl.hostname === configuredHost)) return;
 
+    const isNativeB2Url = downloadUrl.pathname.split("/").filter(Boolean)[0] === "file";
+    const dispositionParameter = isNativeB2Url ? "b2ContentDisposition" : "response-content-disposition";
     downloadUrl.searchParams.set(
-      "b2ContentDisposition",
+      dispositionParameter,
       `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`,
     );
 
