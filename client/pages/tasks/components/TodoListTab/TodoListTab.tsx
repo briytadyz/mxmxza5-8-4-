@@ -189,29 +189,27 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     </div>
                   )}
 
-                  {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
-                    <div className="mt-4 flex justify-center">
+                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-700 pt-4">
+                    {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
                       <AttachmentList
                         attachments={taskAttachments.get(task.id)!}
                         compact={true}
                         popupPlacement="auto"
                         popupAllAttachments={true}
                       />
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex items-center gap-2 border-t border-slate-200 dark:border-slate-700 pt-4">
-                    <Button
-                      onClick={() => onTaskResponseOpen(task)}
-                      className="min-w-0 flex-1 sheraton-gradient text-white"
-                    >
-                      <AlertCircle className="mr-2 h-4 w-4" />
-                      Respond to Task
-                    </Button>
-                    <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0 capitalize`}>
+                    )}
+                    <Badge className={`${getPriorityColor(task.priority)} ml-auto flex-shrink-0 capitalize`}>
                       {task.priority} Priority
                     </Badge>
                   </div>
+
+                  <Button
+                    onClick={() => onTaskResponseOpen(task)}
+                    className="mt-3 w-full sheraton-gradient text-white"
+                  >
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    Respond to Task
+                  </Button>
                 </CardContent>
               </Card>
             ))}
