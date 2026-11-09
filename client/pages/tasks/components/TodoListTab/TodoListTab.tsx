@@ -435,7 +435,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
         {filteredTasks.map((task) => (
           <Card
             key={task.id}
-            className={`${getStatusColor(task.status)} rounded-xl`}
+            className={`${getStatusColor(task.status)} group rounded-xl`}
           >
             <CardContent className="p-5 sm:p-6">
               <div className="flex items-start gap-3 border-b border-slate-100 dark:border-slate-700 pb-4">
@@ -451,7 +451,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                       </Badge>
                     )}
                   </div>
-                  <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy">
+                  <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy transition-colors duration-200 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300">
                     {task.title}
                   </h3>
                 </div>
