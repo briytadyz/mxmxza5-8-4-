@@ -388,7 +388,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-slate-400 italic">
-                Once you complete the work, use the Reports tab to submit evidence and request approval from the manager.
+                You can now submit your Progress Reports for Approval and Complete the task
               </p>
             </div>
           </div>
