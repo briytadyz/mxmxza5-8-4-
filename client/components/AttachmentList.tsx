@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FileText,
   Image,
@@ -100,6 +100,20 @@ const getFileExtension = (fileName: string) => {
 const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom" }) => {
   const [expanded, setExpanded] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!expanded) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!popupRef.current?.contains(event.target as Node)) {
+        setExpanded(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [expanded]);
 
   if (!attachments || attachments.length === 0) {
     return null;
@@ -186,7 +200,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
 
         {/* Other attachments button */}
         {otherAttachments.length > 0 && (
-          <div className="flex items-center gap-2 relative">
+          <div ref={popupRef} className="flex items-center gap-2 relative">
             <button
               onClick={() => setExpanded(!expanded)}
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
