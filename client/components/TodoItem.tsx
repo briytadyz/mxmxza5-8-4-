@@ -388,7 +388,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-slate-400 italic">
-                You can now submit your Progress Reports for Approval and Complete the task
+                The Approval of your Progress Reports will mark this task Completed
               </p>
             </div>
           </div>
