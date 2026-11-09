@@ -15,6 +15,7 @@ import { Badge } from "./ui/badge";
 import MuxVideoPlayer from "./MuxVideoPlayer";
 import FullscreenMediaViewer, { type FullscreenMediaItem } from "./FullscreenMediaViewer";
 import { toast } from "../hooks/use-toast";
+import { supabase } from "../lib/supabase";
 
 interface Attachment {
   id?: string;
@@ -187,11 +188,16 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
   }));
 
   const handleDownload = async (attachment: Attachment) => {
-    const url = getFileUrlFromAttachment(attachment);
-    if (!url) return;
+    const attachmentId = attachment.attachmentId || attachment.id;
+    if (!attachmentId) return;
 
     try {
-      const response = await fetch(url);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Authentication is required");
+
+      const response = await fetch(`/api/attachments/${encodeURIComponent(attachmentId)}/download`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       if (!response.ok) throw new Error("Download request failed");
 
       const downloadUrl = URL.createObjectURL(await response.blob());
