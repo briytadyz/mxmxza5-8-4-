@@ -185,28 +185,26 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   return (
     <Card className={`${getStatusColor(status)} group rounded-xl`}>
       <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-4">
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="p-2 bg-white/80 dark:bg-slate-800 rounded-lg flex-shrink-0 mt-1">
+        <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+              Task #{todo.task_id.slice(0, 8)}
+            </p>
+            <div className="flex flex-shrink-0 items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">
               {getStatusIcon(status)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                Task #{todo.task_id.slice(0, 8)}
-              </p>
-              <CardTitle className={`text-base text-sheraton-navy dark:text-slate-100 line-clamp-2 transition-colors duration-200 ${metadataTone.titleHover}`}>
-                {todo.title}
-              </CardTitle>
-              {todo.description && (
-                <p className="text-sm text-gray-600 dark:text-slate-300 mt-1 line-clamp-2">
-                  {todo.description}
-                </p>
-              )}
+              <span>{status === "in_progress" ? "In Progress" : status === "completed" ? "Completed" : "Pending"}</span>
             </div>
           </div>
-          <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 ml-2 capitalize`}>
-            {todo.priority} Priority
-          </Badge>
+          <div className="min-w-0">
+            <CardTitle className={`text-base text-sheraton-navy dark:text-slate-100 line-clamp-2 transition-colors duration-200 ${metadataTone.titleHover}`}>
+              {todo.title}
+            </CardTitle>
+            {todo.description && (
+              <p className="text-sm text-gray-600 dark:text-slate-300 mt-1 line-clamp-2">
+                {todo.description}
+              </p>
+            )}
+          </div>
         </div>
       </CardHeader>
 
@@ -296,9 +294,14 @@ export const TodoItem: React.FC<TodoItemProps> = ({
 
         {/* Status Update Section */}
         <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-          <p className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-3">
-            Task Status
-          </p>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              Task Status
+            </p>
+            <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 capitalize`}>
+              {todo.priority} Priority
+            </Badge>
+          </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Select value={status} onValueChange={(value) => {
