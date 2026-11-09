@@ -49,6 +49,37 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [status, setStatus] = useState(todo.status);
   const [payment, setPayment] = useState<WorkerTaskPayment | null>(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+
+  useEffect(() => {
+    if (status !== "in_progress") return;
+
+    let isActive = true;
+    const loadProgress = async () => {
+      const { data } = await supabase
+        .from("task_reports")
+        .select("percentage_complete")
+        .eq("task_id", todo.task_id)
+        .maybeSingle();
+
+      if (isActive) setProgressPercentage(data?.percentage_complete ?? 0);
+    };
+
+    void loadProgress();
+    const reportSubscription = supabase
+      .channel(`todo-progress:${todo.task_id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_reports", filter: `task_id=eq.${todo.task_id}` },
+        () => void loadProgress()
+      )
+      .subscribe();
+
+    return () => {
+      isActive = false;
+      void reportSubscription.unsubscribe();
+    };
+  }, [status, todo.task_id]);
 
   useEffect(() => {
     let isActive = true;
@@ -281,6 +312,32 @@ export const TodoItem: React.FC<TodoItemProps> = ({
             </div>
           )}
         </div>
+
+        {status === "in_progress" && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                Work Progress
+              </p>
+              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                {progressPercentage}%
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label="Task completion"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercentage}
+              className="h-2.5 overflow-hidden rounded-full bg-blue-100 dark:bg-slate-700"
+            >
+              <div
+                className="h-full rounded-full bg-blue-500 transition-[width] duration-500 dark:bg-blue-400"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Attachments Section */}
         {attachments && attachments.length > 0 && (
