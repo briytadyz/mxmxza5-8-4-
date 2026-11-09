@@ -14,8 +14,6 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import MuxVideoPlayer from "./MuxVideoPlayer";
 import FullscreenMediaViewer, { type FullscreenMediaItem } from "./FullscreenMediaViewer";
-import { toast } from "../hooks/use-toast";
-import { supabase } from "../lib/supabase";
 
 interface Attachment {
   id?: string;
@@ -193,34 +191,37 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
     fileSize: getFileSizeFromAttachment(attachment),
   }));
 
-  const handleDownload = async (attachment: Attachment) => {
-    const attachmentId = attachment.attachmentId || attachment.id;
-    if (!attachmentId) return;
+  const handleDownload = (attachment: Attachment) => {
+    const fileName = getFileNameFromAttachment(attachment);
+    const safeFileName = fileName.replace(/[\\/]/g, "_").replace(/[\r\n";]/g, "_") || "attachment";
+    const fileUrl = getFileUrlFromAttachment(attachment);
+    if (!fileUrl) return;
 
+    let downloadUrl: URL;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Authentication is required");
-
-      const response = await fetch(`/api/attachments/${encodeURIComponent(attachmentId)}/download`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!response.ok) throw new Error("Download request failed");
-
-      const downloadUrl = URL.createObjectURL(await response.blob());
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = getFileNameFromAttachment(attachment);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      downloadUrl = new URL(fileUrl);
     } catch {
-      toast({
-        title: "Download failed",
-        description: "Unable to download this attachment.",
-        variant: "destructive",
-      });
+      return;
     }
+
+    const configuredHost = import.meta.env.VITE_B2_PUBLIC_URL
+      ? new URL(import.meta.env.VITE_B2_PUBLIC_URL).hostname
+      : "";
+    if (downloadUrl.protocol !== "https:" ||
+      !(downloadUrl.hostname.endsWith(".backblazeb2.com") || downloadUrl.hostname === configuredHost)) return;
+
+    downloadUrl.searchParams.set(
+      "b2ContentDisposition",
+      `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`,
+    );
+
+    const link = document.createElement("a");
+    link.href = downloadUrl.toString();
+    link.download = safeFileName;
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   if (compact) {
