@@ -116,8 +116,9 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       if (!trigger) return;
 
       const bounds = trigger.getBoundingClientRect();
-      const spaceAbove = bounds.top - 12;
-      const spaceBelow = window.innerHeight - bounds.bottom - 12;
+      const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+      const spaceAbove = Math.max(0, bounds.top - Math.max(12, headerBottom + 12));
+      const spaceBelow = Math.max(0, window.innerHeight - bounds.bottom - 12);
       const placement = popupPlacement === "auto"
         ? spaceAbove >= spaceBelow ? "top" : "bottom"
         : popupPlacement;
@@ -125,7 +126,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       const left = Math.max(8, Math.min(bounds.left + bounds.width / 2 - width / 2, window.innerWidth - width - 8));
 
       setEffectivePlacement(placement);
-      setPopupMaxHeight(Math.max(120, Math.min(448, placement === "top" ? spaceAbove : spaceBelow)));
+      setPopupMaxHeight(Math.max(1, Math.min(448, placement === "top" ? spaceAbove : spaceBelow)));
       setPopupWidth(width);
       setPopupOffsetX(left - bounds.left);
     };
@@ -250,7 +251,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                 role="dialog"
                 aria-label="Task attachments"
                 style={{ maxHeight: popupMaxHeight, width: popupWidth, left: popupOffsetX }}
-                className={`absolute z-[100] ${effectivePlacement === "top" ? "bottom-full mb-2" : "top-full mt-2"} left-0 flex w-80 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900`}
+                className={`absolute z-[40] ${effectivePlacement === "top" ? "bottom-full mb-2" : "top-full mt-2"} left-0 flex w-80 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900`}
               >
                 <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
                   <div className="flex items-center gap-2">
