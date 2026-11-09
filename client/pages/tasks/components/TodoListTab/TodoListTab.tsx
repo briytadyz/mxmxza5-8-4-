@@ -465,41 +465,41 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                 {task.description}
               </p>
 
-              <div className={`mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-3.5`}>
+              <div className={`mt-4 grid grid-cols-2 gap-x-5 gap-y-5 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-4`}>
                 {task.category && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Category</p>
-                    <p className="mt-1 truncate text-sm font-semibold capitalize text-slate-800" title={task.category}>{task.category}</p>
+                    <p className="mt-2 truncate text-sm font-semibold capitalize text-slate-800" title={task.category}>{task.category}</p>
                   </div>
                 )}
                 {task.assignee_name && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Assigned To</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
+                    <p className="mt-2 truncate text-sm font-semibold text-slate-800" title={task.assignee_name}>{task.assignee_name}</p>
                   </div>
                 )}
                 {task.due_date && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Due Date</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
                 )}
                 {task.estimated_time && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Est. Time</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">{task.estimated_time}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{task.estimated_time}</p>
                   </div>
                 )}
                 {(task as any).budget && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Budget</p>
-                    <p className="mt-1 text-sm font-semibold text-emerald-700">${parseFloat((task as any).budget).toFixed(2)}</p>
+                    <p className="mt-2 text-sm font-semibold text-emerald-700">${parseFloat((task as any).budget).toFixed(2)}</p>
                   </div>
                 )}
                 {task.assigned_category && (
                   <div className="min-w-0">
                     <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Type</p>
-                    <p className="mt-1 text-sm font-semibold capitalize text-slate-800">{task.assigned_category}</p>
+                    <p className="mt-2 text-sm font-semibold capitalize text-slate-800">{task.assigned_category}</p>
                   </div>
                 )}
                 {taskAttachments.get(task.id)?.some((attachment) => attachment.fileType === "video") && (
