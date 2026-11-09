@@ -16,15 +16,15 @@ export const getPriorityColor = (priority: string): string => {
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case "todo":
-      return "bg-white border border-slate-200 border-l-4 border-l-amber-400 shadow-sm";
+      return "bg-white border border-amber-300 border-l-4 border-l-amber-400 shadow-sm";
     case "in_progress":
-      return "bg-white border border-slate-200 border-l-4 border-l-blue-500 shadow-sm";
+      return "bg-white border border-blue-300 border-l-4 border-l-blue-500 shadow-sm";
     case "in_review":
-      return "bg-white border border-slate-200 border-l-4 border-l-violet-500 shadow-sm";
+      return "bg-white border border-violet-300 border-l-4 border-l-violet-500 shadow-sm";
     case "completed":
-      return "bg-white border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm";
+      return "bg-white border border-emerald-300 border-l-4 border-l-emerald-500 shadow-sm";
     default:
-      return "bg-white border border-slate-200 border-l-4 border-l-slate-400 shadow-sm";
+      return "bg-white border border-slate-300 border-l-4 border-l-slate-400 shadow-sm";
   }
 };
 
