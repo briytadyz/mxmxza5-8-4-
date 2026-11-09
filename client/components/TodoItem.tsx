@@ -212,30 +212,41 @@ export const TodoItem: React.FC<TodoItemProps> = ({
 
       <CardContent className="space-y-4 p-5 pt-0 sm:p-6 sm:pt-0">
         <div className={`grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl ${metadataTone.panel} p-4`}>
-          {todo.due_date && (
-            <div className="min-w-0">
-              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
-                Due Date
-              </p>
-              <p className={`mt-1.5 text-sm font-semibold ${isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}`}>
-                {new Date(todo.due_date).toLocaleDateString()}
-              </p>
-              {isOverdue && (
-                <p className="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">
-                  Overdue
+          {(todo.due_date || todo.estimated_hours || todo.details?.estimated_time || todo.details?.payment_terms) && (
+            <div className="min-w-0 space-y-2">
+              {todo.due_date && (
+                <div>
+                  <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
+                    Due Date
+                  </p>
+                  <p className={`mt-1.5 text-sm font-semibold ${isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}`}>
+                    {new Date(todo.due_date).toLocaleDateString()}
+                  </p>
+                  {isOverdue && (
+                    <p className="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                      Overdue
+                    </p>
+                  )}
+                </div>
+              )}
+              {todo.details?.estimated_time && (
+                <p className="text-sm text-slate-700 dark:text-slate-200">
+                  <span className="font-semibold">Estimated Time: </span>
+                  {todo.details.estimated_time}
                 </p>
               )}
-            </div>
-          )}
-
-          {todo.estimated_hours && (
-            <div className="min-w-0">
-              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
-                Est. Hours
-              </p>
-              <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                {todo.estimated_hours.toFixed(1)}h
-              </p>
+              {todo.estimated_hours && (
+                <p className="text-sm text-slate-700 dark:text-slate-200">
+                  <span className="font-semibold">Est. Hours: </span>
+                  {todo.estimated_hours.toFixed(1)}h
+                </p>
+              )}
+              {todo.details?.payment_terms && (
+                <p className="text-sm text-slate-700 dark:text-slate-200">
+                  <span className="font-semibold">Payment Terms: </span>
+                  {todo.details.payment_terms}
+                </p>
+              )}
             </div>
           )}
 
@@ -261,25 +272,6 @@ export const TodoItem: React.FC<TodoItemProps> = ({
             </div>
           )}
         </div>
-
-        {/* Task Details from Original Task */}
-        {todo.details && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2 dark:border-slate-700 dark:bg-slate-800">
-            {todo.details.estimated_time && (
-              <div className="text-sm">
-                <span className="font-semibold text-gray-600 dark:text-slate-300">Estimated Time: </span>
-                <span className="text-gray-700 dark:text-slate-200">{todo.details.estimated_time}</span>
-              </div>
-            )}
-
-            {todo.details.payment_terms && (
-              <div className="text-sm">
-                <span className="font-semibold text-gray-600 dark:text-slate-300">Payment Terms: </span>
-                <span className="text-gray-700 dark:text-slate-200">{todo.details.payment_terms}</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Attachments Section */}
         {attachments && attachments.length > 0 && (
