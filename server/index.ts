@@ -27,6 +27,7 @@ import {
 } from "./routes/hotelBookings.js";
 import { createMenuOrder } from "./routes/menuOrders.js";
 import { submitHotelNewsletter } from "./routes/hotelNewsletter.js";
+import { downloadAttachment } from "./routes/attachments.js";
 import {
   cancelHotelSpaPayment,
   createHotelSpaBooking,
@@ -80,6 +81,7 @@ export function createServer() {
   app.get("/api/ping", (_req, res) => {
     res.json({ message: "Hello from Express server v2!" });
   });
+  app.get("/api/attachments/:attachmentId/download", downloadAttachment);
 
   app.get("/api/demo", handleDemo);
   app.get("/api/platform/admin-status", getPlatformAdminStatus);

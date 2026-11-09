@@ -34,18 +34,18 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         label="Urgent Tasks"
         value={stats.urgent}
         icon={AlertCircle}
-        iconColor="text-red-500"
+        iconColor="text-red-500 dark:text-red-400"
         cardBorder="border-l-4 border-l-red-500"
-        textColor="text-red-600"
+        textColor="text-red-600 dark:text-red-400"
       />
 
       <StatsCard
         label="Completed Today"
         value={stats.completedToday}
         icon={CheckCircle}
-        iconColor="text-green-500"
+        iconColor="text-green-500 dark:text-green-400"
         cardBorder="border-l-4 border-l-green-500"
-        textColor="text-green-600"
+        textColor="text-green-600 dark:text-green-400"
       />
 
       <StatsCard
@@ -54,7 +54,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
         icon={MessageSquare}
         iconColor="text-sheraton-gold"
         cardBorder="border-l-4 border-l-sheraton-gold"
-        textColor="text-sheraton-gold"
+        textColor="text-sheraton-gold dark:text-amber-300"
       />
     </div>
   );

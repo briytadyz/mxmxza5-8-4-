@@ -2,7 +2,8 @@ import path from "path";
 import * as express from "express";
 import express__default from "express";
 import cors from "cors";
-import { randomUUID, createHash, timingSafeEqual, randomBytes } from "node:crypto";
+import { randomUUID, createHash, randomBytes, timingSafeEqual, createHmac } from "node:crypto";
+import { Readable } from "node:stream";
 import { resolveTxt } from "node:dns/promises";
 const handleDemo = (req, res) => {
   const response = {
@@ -10,7 +11,7 @@ const handleDemo = (req, res) => {
   };
   res.status(200).json(response);
 };
-const configuration$2 = () => {
+const configuration$4 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,8 +20,8 @@ const configuration$2 = () => {
   }
   return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
 };
-const serviceHeaders$2 = (json = false) => {
-  const { supabaseAnonKey, serviceRoleKey } = configuration$2();
+const serviceHeaders$3 = (json = false) => {
+  const { supabaseAnonKey, serviceRoleKey } = configuration$4();
   return {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${serviceRoleKey}`,
@@ -36,10 +37,10 @@ const resolveRequestHotelTenant = async (request) => {
   if (!hostname) throw new Error("Hotel domain is missing");
   process.env.BUILDER_PREVIEW_TENANT_ORGANIZATION_ID;
   hostname.endsWith(".projects.builder.my") || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$4();
   const tenantResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/resolve_hotel_tenant`, {
     method: "POST",
-    headers: serviceHeaders$2(true),
+    headers: serviceHeaders$3(true),
     body: JSON.stringify({ target_hostname: hostname }),
     signal: AbortSignal.timeout(1e4)
   });
@@ -57,38 +58,38 @@ const resolveRequestHotelTenant = async (request) => {
   };
 };
 const setPrivateTenantResponse = (response) => response.setHeader("Cache-Control", "private, no-store");
-const readService$2 = async (path2) => {
-  const { supabaseUrl } = configuration$2();
+const readService$3 = async (path2) => {
+  const { supabaseUrl } = configuration$4();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
-    headers: serviceHeaders$2(),
+    headers: serviceHeaders$3(),
     signal: AbortSignal.timeout(1e4)
   });
   if (!response.ok) throw new Error("Hotel information could not be loaded");
   return response.json();
 };
 const updateService = async (path2, body) => {
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$4();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method: "PATCH",
-    headers: { ...serviceHeaders$2(true), Prefer: "return=minimal" },
+    headers: { ...serviceHeaders$3(true), Prefer: "return=minimal" },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(1e4)
   });
   if (!response.ok) throw new Error("Menu media information could not be saved");
 };
 const hotelOfferError = (message, status) => Object.assign(new Error(message), { status });
-const writeService$1 = async (path2, method, body) => {
-  const { supabaseUrl } = configuration$2();
+const writeService$2 = async (path2, method, body) => {
+  const { supabaseUrl } = configuration$4();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method,
-    headers: { ...serviceHeaders$2(true), Prefer: "return=representation" },
+    headers: { ...serviceHeaders$3(true), Prefer: "return=representation" },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(1e4)
   });
   if (!response.ok) throw hotelOfferError("Hotel offer could not be saved", 503);
   return response.json();
 };
-const requireHotelManager = async (request) => {
+const requireHotelManager$1 = async (request) => {
   const tenant = await resolveRequestHotelTenant(request);
   const userId = await getAuthenticatedUserId$2(request.headers.authorization);
   const organizationId = encodeURIComponent(tenant.organizationId);
@@ -97,8 +98,8 @@ const requireHotelManager = async (request) => {
   let memberships;
   try {
     [profiles, memberships] = await Promise.all([
-      readService$2(`user_profiles?user_id=eq.${userFilter}&select=role&limit=1`),
-      readService$2(`books_memberships?organization_id=eq.${organizationId}&user_id=eq.${userFilter}&role=in.(owner,admin)&select=role&limit=1`)
+      readService$3(`user_profiles?user_id=eq.${userFilter}&select=role&limit=1`),
+      readService$3(`books_memberships?organization_id=eq.${organizationId}&user_id=eq.${userFilter}&role=in.(owner,admin)&select=role&limit=1`)
     ]);
   } catch {
     throw hotelOfferError("Hotel manager access could not be verified", 503);
@@ -156,10 +157,10 @@ const validateHotelOffer = (value) => {
   };
 };
 const callTenantRpc = async (name, args) => {
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$4();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
-    headers: serviceHeaders$2(true),
+    headers: serviceHeaders$3(true),
     body: JSON.stringify(args),
     signal: AbortSignal.timeout(1e4)
   });
@@ -171,7 +172,7 @@ const callTenantRpc = async (name, args) => {
 };
 const getAuthenticatedUserId$2 = async (authorization) => {
   if (!authorization?.startsWith("Bearer ")) throw new Error("Authentication is required");
-  const { supabaseUrl, supabaseAnonKey } = configuration$2();
+  const { supabaseUrl, supabaseAnonKey } = configuration$4();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: supabaseAnonKey, Authorization: authorization },
     signal: AbortSignal.timeout(1e4)
@@ -321,7 +322,7 @@ const submitHotelComplaint = async (request, response) => {
       return;
     }
     const userId = request.headers.authorization ? await getAuthenticatedUserId$2(request.headers.authorization) : null;
-    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = configuration$2();
+    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = configuration$4();
     const insertResponse = await fetch(`${supabaseUrl}/rest/v1/complaints?select=id`, {
       method: "POST",
       headers: {
@@ -404,9 +405,9 @@ const getPublicHotelBookingData = async (request, response) => {
     const organizationId = encodeURIComponent(tenant.organizationId);
     await callTenantRpc("release_expired_hotel_offer_holds_for_tenant", { target_organization_id: tenant.organizationId });
     const [settings, offers, rooms] = await Promise.all([
-      readService$2(`hotel_tenant_settings?organization_id=eq.${organizationId}&select=booking_title,booking_subtitle&is_active=eq.true&limit=1`),
-      readService$2(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&is_active=eq.true&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,max_uses,usage_count&order=display_order`),
-      readService$2(`hotel_public_room_listings?organization_id=eq.${organizationId}&select=id,organization_id,name,room_type,description,image_url,size_sqm,max_guests,available_units,nightly_rate,original_nightly_rate,currency_code,amenities,status,hotel_name,hotel_city,hotel_country,hotel_classification&order=nightly_rate`)
+      readService$3(`hotel_tenant_settings?organization_id=eq.${organizationId}&select=booking_title,booking_subtitle&is_active=eq.true&limit=1`),
+      readService$3(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&is_active=eq.true&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,max_uses,usage_count&order=display_order`),
+      readService$3(`hotel_public_room_listings?organization_id=eq.${organizationId}&select=id,organization_id,name,room_type,description,image_url,size_sqm,max_guests,available_units,nightly_rate,original_nightly_rate,currency_code,amenities,status,hotel_name,hotel_city,hotel_country,hotel_classification&order=nightly_rate`)
     ]);
     if (settings.length !== 1) throw new Error("Hotel booking content is not configured");
     setPrivateTenantResponse(response);
@@ -421,18 +422,20 @@ const getPublicHotelOffers = async (request, response) => {
     const organizationId = encodeURIComponent(tenant.organizationId);
     const now = (/* @__PURE__ */ new Date()).toISOString();
     await callTenantRpc("release_expired_hotel_offer_holds_for_tenant", { target_organization_id: tenant.organizationId });
-    const [roomOffers, menuItems, loyaltyPrograms, events] = await Promise.all([
-      readService$2(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&is_active=eq.true&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,display_order,featured,terms,max_uses,usage_count&order=display_order`),
-      readService$2(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&special_offer=not.is.null&select=id,name,short_description,price,original_price,currency,special_offer,availability,max_availability&order=created_at.asc`),
-      readService$2(`hotel_loyalty_programs?organization_id=eq.${organizationId}&program_enabled=eq.true&select=program_name,points_per_1000_ugx&limit=1`),
-      readService$2(`special_events?organization_id=eq.${organizationId}&status=eq.published&is_private=eq.false&starts_at=gte.${encodeURIComponent(now)}&select=id,title,description,starts_at,ends_at,location,price,currency,category,image_url,featured&order=featured.desc,starts_at.asc`)
+    const [roomOffers, menuItems, loyaltyPrograms, events, spaServices] = await Promise.all([
+      readService$3(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&is_active=eq.true&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,display_order,featured,terms,max_uses,usage_count&order=display_order`),
+      readService$3(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&special_offer=not.is.null&select=id,name,short_description,price,original_price,currency,special_offer,availability,max_availability&order=created_at.asc`),
+      readService$3(`hotel_loyalty_programs?organization_id=eq.${organizationId}&program_enabled=eq.true&select=program_name,points_per_1000_ugx&limit=1`),
+      readService$3(`special_events?organization_id=eq.${organizationId}&status=eq.published&is_private=eq.false&starts_at=gte.${encodeURIComponent(now)}&select=id,title,description,starts_at,ends_at,location,price,currency,category,image_url,featured&order=featured.desc,starts_at.asc`),
+      readService$3(`hotel_spa_services?organization_id=eq.${organizationId}&is_active=eq.true&select=id,name,description,price,currency_code,duration_minutes&order=name.asc`)
     ]);
     const dateIsCurrent = (startsAt, endsAt) => (typeof startsAt !== "string" || new Date(startsAt).getTime() <= Date.now()) && (typeof endsAt !== "string" || new Date(endsAt).getTime() > Date.now());
     const offers = [
       ...roomOffers.filter((offer) => dateIsCurrent(offer.starts_at, offer.ends_at) && (offer.discount_type === "fixed" ? Boolean(offer.promo_code) && Number(offer.discount_amount) > 0 : Number(offer.discount_percentage) > 0)).map((offer) => ({ ...offer, discount: typeof offer.discount_label === "string" && offer.discount_label.trim() ? offer.discount_label : offer.discount_type === "fixed" ? `${offer.currency_code || ""} ${offer.discount_amount} OFF` : `${Number(offer.discount_percentage)}% OFF`, category: "accommodation", source: "booking" })),
       ...menuItems.filter((item) => typeof item.special_offer === "string" && item.special_offer.trim()).map((item) => ({ ...item, availability: item.availability === null ? null : Number(item.availability), title: item.name, description: `${item.special_offer}. ${item.short_description || ""}`.trim(), discount: item.original_price && Number(item.original_price) > Number(item.price) ? `${Math.round((1 - Number(item.price) / Number(item.original_price)) * 100)}% OFF` : "MENU SPECIAL", category: "dining", source: "menu" })),
       ...loyaltyPrograms.map((program) => ({ ...program, id: "hotel-rewards", title: program.program_name, description: `Earn ${program.points_per_1000_ugx} point${Number(program.points_per_1000_ugx) === 1 ? "" : "s"} for every UGX 1,000 spent on eligible purchases.`, discount: "REWARDS", category: "loyalty", source: "loyalty" })),
-      ...events.filter((event) => typeof event.ends_at !== "string" || new Date(event.ends_at).getTime() > Date.now()).map((event) => ({ ...event, title: event.title, discount: event.price && Number(event.price) > 0 ? `FROM ${event.currency || ""} ${event.price}` : "UPCOMING EVENT", category: "seasonal", source: "event" }))
+      ...events.filter((event) => typeof event.ends_at !== "string" || new Date(event.ends_at).getTime() > Date.now()).map((event) => ({ ...event, title: event.title, discount: event.price && Number(event.price) > 0 ? `FROM ${event.currency || ""} ${event.price}` : "UPCOMING EVENT", category: "seasonal", source: "event" })),
+      ...spaServices.map((service) => ({ ...service, title: service.name, discount: `${service.currency_code} ${Number(service.price).toLocaleString()}`, category: "spa", image: "🧖", source: "spa" }))
     ];
     setPrivateTenantResponse(response);
     response.json({ tenant, offers });
@@ -442,7 +445,7 @@ const getPublicHotelOffers = async (request, response) => {
 };
 const checkHotelOfferManagementAccess = async (request, response) => {
   try {
-    await requireHotelManager(request);
+    await requireHotelManager$1(request);
     setPrivateTenantResponse(response);
     response.json({ authorized: true });
   } catch (error) {
@@ -452,10 +455,10 @@ const checkHotelOfferManagementAccess = async (request, response) => {
 };
 const getHotelOffersForManagement = async (request, response) => {
   try {
-    const tenant = await requireHotelManager(request);
+    const tenant = await requireHotelManager$1(request);
     const organizationId = encodeURIComponent(tenant.organizationId);
     await callTenantRpc("release_expired_hotel_offer_holds_for_tenant", { target_organization_id: tenant.organizationId });
-    const offers = await readService$2(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,display_order,featured,terms,max_uses,usage_count,is_active&order=display_order`);
+    const offers = await readService$3(`hotel_booking_offers?organization_id=eq.${organizationId}&category=eq.accommodation&select=id,title,description,discount_percentage,discount_type,discount_label,discount_amount,currency_code,min_spend,max_discount,promo_code,image,popularity,limited_time,minimum_nights,starts_at,ends_at,display_order,featured,terms,max_uses,usage_count,is_active&order=display_order`);
     setPrivateTenantResponse(response);
     response.json({ offers });
   } catch (error) {
@@ -465,7 +468,7 @@ const getHotelOffersForManagement = async (request, response) => {
 };
 const saveHotelOffer = async (request, response) => {
   try {
-    const tenant = await requireHotelManager(request);
+    const tenant = await requireHotelManager$1(request);
     const body = request.body;
     const offerId = body.id;
     if (offerId !== void 0 && (typeof offerId !== "string" || !isUuid$1(offerId))) {
@@ -475,12 +478,12 @@ const saveHotelOffer = async (request, response) => {
     const offer = validateHotelOffer(body);
     const organizationId = encodeURIComponent(tenant.organizationId);
     if (typeof offerId === "string") {
-      const updated = await writeService$1(`hotel_booking_offers?id=eq.${encodeURIComponent(offerId)}&organization_id=eq.${organizationId}&select=id`, "PATCH", offer);
+      const updated = await writeService$2(`hotel_booking_offers?id=eq.${encodeURIComponent(offerId)}&organization_id=eq.${organizationId}&select=id`, "PATCH", offer);
       if (!updated.length) {
         throw hotelOfferError("Offer was not found for this hotel", 404);
       }
     } else {
-      await writeService$1("hotel_booking_offers?select=id", "POST", { ...offer, organization_id: tenant.organizationId });
+      await writeService$2("hotel_booking_offers?select=id", "POST", { ...offer, organization_id: tenant.organizationId });
     }
     setPrivateTenantResponse(response);
     response.json({ ok: true });
@@ -497,9 +500,9 @@ const getPublicMenuItems = async (request, response) => {
     const legacySelect = select.replace(",media_aspect_ratio", "");
     let items;
     try {
-      items = await readService$2(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&select=${select}&order=created_at.asc`);
+      items = await readService$3(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&select=${select}&order=created_at.asc`);
     } catch {
-      items = await readService$2(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&select=${legacySelect}&order=created_at.asc`);
+      items = await readService$3(`menu_items?organization_id=eq.${organizationId}&is_published=eq.true&select=${legacySelect}&order=created_at.asc`);
     }
     setPrivateTenantResponse(response);
     response.json({ tenant, items });
@@ -558,11 +561,11 @@ const getPublicMenuVideo = async (request, response) => {
     const encodedAttachmentId = encodeURIComponent(attachmentId);
     let menuItems;
     try {
-      menuItems = await readService$2(
+      menuItems = await readService$3(
         `menu_items?organization_id=eq.${organizationId}&media_attachment_id=eq.${encodedAttachmentId}&media_type=eq.video&is_published=eq.true&select=id,media_aspect_ratio&limit=1`
       );
     } catch {
-      menuItems = await readService$2(
+      menuItems = await readService$3(
         `menu_items?organization_id=eq.${organizationId}&media_attachment_id=eq.${encodedAttachmentId}&media_type=eq.video&is_published=eq.true&select=id&limit=1`
       );
     }
@@ -570,7 +573,7 @@ const getPublicMenuVideo = async (request, response) => {
       response.status(404).json({ error: "Menu video was not found" });
       return;
     }
-    const attachments = await readService$2(
+    const attachments = await readService$3(
       `attachments?id=eq.${encodedAttachmentId}&select=filename&limit=1`
     );
     if (attachments.length === 0) {
@@ -578,7 +581,7 @@ const getPublicMenuVideo = async (request, response) => {
       return;
     }
     const filename = encodeURIComponent(attachments[0].filename);
-    const videos = await readService$2(
+    const videos = await readService$3(
       `video_uploads?filename=eq.${filename}&select=playback_id,status&limit=1`
     );
     const video = videos[0];
@@ -612,7 +615,7 @@ const getPublicSpecialEvents = async (request, response) => {
     const tenant = await resolveRequestHotelTenant(request);
     const organizationId = encodeURIComponent(tenant.organizationId);
     const select = "id,title,description,starts_at,ends_at,timezone,location,facility_id,organization_id,is_private,share_token,price,currency,capacity,ticket_type_capacity,max_tickets_per_order,default_ticket_type_id,attendees_count,category,image_url,featured,rating,host_name,status,organizer_id,created_at,updated_at";
-    const events = await readService$2(`special_events?organization_id=eq.${organizationId}&status=eq.published&is_private=eq.false&starts_at=gte.${encodeURIComponent((/* @__PURE__ */ new Date()).toISOString())}&select=${select}&order=featured.desc,starts_at.asc`);
+    const events = await readService$3(`special_events?organization_id=eq.${organizationId}&status=eq.published&is_private=eq.false&starts_at=gte.${encodeURIComponent((/* @__PURE__ */ new Date()).toISOString())}&select=${select}&order=featured.desc,starts_at.asc`);
     setPrivateTenantResponse(response);
     response.json({ events });
   } catch (error) {
@@ -646,16 +649,16 @@ class FlutterwaveRequestError extends Error {
   }
 }
 const getFlutterwaveReturnUrl = (domain) => {
-  const returnUrl = process.env.FLUTTERWAVE_RETURN_URL;
-  if (!returnUrl) throw new Error("Flutterwave return URL is not configured");
-  const parsedUrl = new URL(returnUrl);
+  const returnUrl2 = process.env.FLUTTERWAVE_RETURN_URL;
+  if (!returnUrl2) throw new Error("Flutterwave return URL is not configured");
+  const parsedUrl = new URL(returnUrl2);
   if (parsedUrl.protocol !== "https:" || parsedUrl.pathname !== flutterwaveReturnPath$1) {
     throw new Error("Flutterwave return URL must use HTTPS and target the payment return route");
   }
   parsedUrl.hostname = domain;
   return parsedUrl.toString();
 };
-const getConfiguration$2 = () => {
+const getConfiguration$3 = () => {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
   const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -678,7 +681,7 @@ const getAuthenticatedOrder = async (orderId, authorization) => {
   if (!authorization?.startsWith("Bearer ")) {
     throw new Error("Missing authenticated session");
   }
-  const { supabaseUrl, supabaseAnonKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey } = getConfiguration$3();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/menu_orders?id=eq.${encodeURIComponent(orderId)}&select=*`,
     {
@@ -694,7 +697,7 @@ const getAuthenticatedOrder = async (orderId, authorization) => {
   return order;
 };
 const getPaymentAttempt = async (txRef) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/menu_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&select=id,order_id,tx_ref,transaction_id,amount,currency,status`,
     { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseServiceRoleKey}` } }
@@ -705,7 +708,7 @@ const getPaymentAttempt = async (txRef) => {
   return attempt;
 };
 const getOrderByIdAsService = async (orderId) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/menu_orders?id=eq.${encodeURIComponent(orderId)}&select=*`,
     { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseServiceRoleKey}` } }
@@ -720,7 +723,7 @@ const getOrderByPaymentReference = async (paymentReference) => {
   return getOrderByIdAsService(attempt.order_id);
 };
 const updatePaymentAttemptAsService = async (txRef, values) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/menu_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}`,
     {
@@ -741,7 +744,7 @@ const updatePaymentAttemptAsService = async (txRef, values) => {
   }
 };
 const updatePendingOrderAsService = async (orderId, values, txRef) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/menu_orders?id=eq.${encodeURIComponent(orderId)}&payment_status=eq.pending&payment_reference=eq.${encodeURIComponent(txRef)}`,
     {
@@ -758,7 +761,7 @@ const updatePendingOrderAsService = async (orderId, values, txRef) => {
   if (!response.ok) throw new Error("Unable to update payment order");
 };
 const confirmMenuPaymentAsService = async (orderId, txRef, transactionId) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/confirm_menu_flutterwave_payment`, {
     method: "POST",
     headers: {
@@ -788,7 +791,7 @@ const getPaymentOptions = (paymentMethod, currency) => {
   return "mobilemoneyuganda";
 };
 const verifyTransaction$2 = async (transactionId) => {
-  const { secretKey } = getConfiguration$2();
+  const { secretKey } = getConfiguration$3();
   const response = await fetch(
     `${flutterwaveBaseUrl$2}/transactions/${encodeURIComponent(transactionId)}/verify`,
     { headers: { Authorization: `Bearer ${secretKey}` } }
@@ -804,7 +807,7 @@ const confirmPayment = async (transaction, transactionReference, order) => {
   if (metadataOrderId !== order.id) {
     throw new Error("Payment metadata does not match the order");
   }
-  const { defaultCurrency } = getConfiguration$2();
+  const { defaultCurrency } = getConfiguration$3();
   const currency = String(order.currency || defaultCurrency).toUpperCase();
   if (transaction.status !== "successful" || transaction.tx_ref !== transactionReference || Number(transaction.amount) !== Number(order.total_amount) || transaction.currency !== currency) {
     throw new Error("Payment verification data does not match the order");
@@ -829,7 +832,7 @@ const confirmPayment = async (transaction, transactionReference, order) => {
   };
 };
 const createMenuPaymentAttempt = async (order, txRef) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_menu_payment_attempt`, {
     method: "POST",
     headers: {
@@ -863,7 +866,7 @@ const prepareFlutterwaveHostedSession = async ({ orderId }, tenantOrganizationId
     if (!order.email?.trim()) {
       throw new FlutterwaveRequestError("An email address is required for online payment.", 400);
     }
-    const { secretKey } = getConfiguration$2();
+    const { secretKey } = getConfiguration$3();
     let attempt = await createMenuPaymentAttempt(order, `sheraton-${order.order_number}-${crypto.randomUUID()}`);
     if (attempt.attempt_status === "redirected") {
       const existingAttempt = await getPaymentAttempt(attempt.attempt_tx_ref);
@@ -997,7 +1000,7 @@ const verifyFlutterwavePayment = async (req, res) => {
 };
 const handleFlutterwaveWebhook = async (req, res) => {
   const signature = req.headers["verif-hash"];
-  const { secretHash } = getConfiguration$2();
+  const { secretHash } = getConfiguration$3();
   if (!signature || signature !== secretHash) {
     return res.status(401).end();
   }
@@ -1026,7 +1029,7 @@ class SpecialEventPaymentError extends Error {
     this.status = status;
   }
 }
-const getConfiguration$1 = () => {
+const getConfiguration$2 = () => {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
   const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -1039,7 +1042,7 @@ const getConfiguration$1 = () => {
 };
 const getAuthenticatedEventUserId = async (authorization) => {
   if (!authorization?.startsWith("Bearer ")) throw new SpecialEventPaymentError("Missing authenticated session", 401);
-  const { supabaseUrl, supabaseAnonKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: supabaseAnonKey, Authorization: authorization },
     signal: AbortSignal.timeout(1e4)
@@ -1050,7 +1053,7 @@ const getAuthenticatedEventUserId = async (authorization) => {
   return user.id;
 };
 const callTenantEventRpc = async (name, args) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: { ...restHeaders(supabaseServiceRoleKey, supabaseAnonKey, true), Prefer: "return=representation" },
@@ -1085,7 +1088,7 @@ const restHeaders = (token, anonKey, json = false) => ({
 });
 const getBooking$1 = async (bookingId, authorization) => {
   if (!authorization?.startsWith("Bearer ")) throw new SpecialEventPaymentError("Missing authenticated session", 401);
-  const { supabaseUrl, supabaseAnonKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/special_event_bookings?id=eq.${encodeURIComponent(bookingId)}&select=*`, {
     headers: restHeaders(authorization.slice("Bearer ".length), supabaseAnonKey)
   });
@@ -1095,7 +1098,7 @@ const getBooking$1 = async (bookingId, authorization) => {
   return booking;
 };
 const getBookingAsService = async (bookingId) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/special_event_bookings?id=eq.${encodeURIComponent(bookingId)}&select=*`, {
     headers: restHeaders(supabaseServiceRoleKey, supabaseAnonKey)
   });
@@ -1105,7 +1108,7 @@ const getBookingAsService = async (bookingId) => {
   return booking;
 };
 const getPaymentAttemptAsService = async (txRef) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/special_event_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&select=id,booking_id,tx_ref,transaction_id,amount,currency,status`, {
     headers: restHeaders(supabaseServiceRoleKey, supabaseAnonKey)
   });
@@ -1115,7 +1118,7 @@ const getPaymentAttemptAsService = async (txRef) => {
   return attempt;
 };
 const getActivePaymentAttempt = async (bookingId) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(
     `${supabaseUrl}/rest/v1/special_event_payment_attempts?booking_id=eq.${encodeURIComponent(bookingId)}&status=in.(initiated,redirected,verified)&select=id,booking_id,tx_ref,transaction_id,amount,currency,status,payment_url,created_at&order=created_at.desc&limit=1`,
     { headers: restHeaders(supabaseServiceRoleKey, supabaseAnonKey) }
@@ -1125,7 +1128,7 @@ const getActivePaymentAttempt = async (bookingId) => {
   return attempt || null;
 };
 const createPaymentAttempt = async (values) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/special_event_payment_attempts`, {
     method: "POST",
     headers: { ...restHeaders(supabaseServiceRoleKey, supabaseAnonKey, true), Prefer: "return=minimal" },
@@ -1134,7 +1137,7 @@ const createPaymentAttempt = async (values) => {
   if (!response.ok) throw new Error("Unable to create event payment attempt");
 };
 const updatePaymentAttempt = async (txRef, values) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/special_event_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}`, {
     method: "PATCH",
     headers: { ...restHeaders(supabaseServiceRoleKey, supabaseAnonKey, true), Prefer: "return=minimal" },
@@ -1143,7 +1146,7 @@ const updatePaymentAttempt = async (txRef, values) => {
   if (!response.ok) throw new Error("Unable to update event payment attempt");
 };
 const verifyTransaction$1 = async (transactionId) => {
-  const { secretKey } = getConfiguration$1();
+  const { secretKey } = getConfiguration$2();
   const response = await fetch(`${flutterwaveBaseUrl$1}/transactions/${encodeURIComponent(transactionId)}/verify`, {
     headers: { Authorization: `Bearer ${secretKey}` }
   });
@@ -1152,7 +1155,7 @@ const verifyTransaction$1 = async (transactionId) => {
   return payload.data;
 };
 const confirmBookingAsService = async (bookingId, transactionId) => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$1();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getConfiguration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/confirm_special_event_payment`, {
     method: "POST",
     headers: { ...restHeaders(supabaseServiceRoleKey, supabaseAnonKey, true), Prefer: "return=representation" },
@@ -1237,7 +1240,7 @@ const prepareSpecialEventPayment = async (req, res) => {
     if (booking.status !== "pending" || booking.payment_status !== "pending") throw new SpecialEventPaymentError("This event booking is no longer pending", 409);
     if (booking.expires_at && new Date(booking.expires_at).getTime() <= Date.now()) throw new SpecialEventPaymentError("This ticket hold has expired. Start a new booking.", 409);
     if (Number(booking.total_amount) <= 0) throw new SpecialEventPaymentError("This booking does not require online payment", 400);
-    const { secretKey } = getConfiguration$1();
+    const { secretKey } = getConfiguration$2();
     const activeAttempt = await getActivePaymentAttempt(booking.id);
     if (activeAttempt?.status === "redirected" && activeAttempt.payment_url) {
       return res.json({ paymentUrl: activeAttempt.payment_url, txRef: activeAttempt.tx_ref, bookingId: booking.id });
@@ -1329,7 +1332,7 @@ const cancelSpecialEventPayment = async (req, res) => {
   }
 };
 const handleSpecialEventWebhook = async (req, res) => {
-  const { secretHash } = getConfiguration$1();
+  const { secretHash } = getConfiguration$2();
   if (!secretHash) {
     console.error("Special event webhook secret is not configured");
     return res.status(503).end();
@@ -1352,6 +1355,355 @@ const handleSpecialEventWebhook = async (req, res) => {
     return res.status(500).end();
   }
 };
+const paymentBaseUrl = "https://api.flutterwave.com/v3";
+const supportedCurrencies$1 = /* @__PURE__ */ new Set(["USD", "UGX", "EUR", "GBP", "KES", "TZS", "RWF"]);
+const configuration$3 = () => {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) throw new Error("Hotel spa database configuration is incomplete");
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
+};
+const serviceHeaders$2 = (json = false) => {
+  const { supabaseAnonKey, serviceRoleKey } = configuration$3();
+  return { apikey: supabaseAnonKey, Authorization: `Bearer ${serviceRoleKey}`, ...json ? { "content-type": "application/json" } : {} };
+};
+const readService$2 = async (path2) => {
+  const { supabaseUrl } = configuration$3();
+  const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, { headers: serviceHeaders$2(), signal: AbortSignal.timeout(1e4) });
+  if (!response.ok) throw new Error("Hotel spa data could not be loaded");
+  return response.json();
+};
+const writeService$1 = async (path2, method, body) => {
+  const { supabaseUrl } = configuration$3();
+  const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
+    method,
+    headers: { ...serviceHeaders$2(true), Prefer: "return=representation" },
+    ...body ? { body: JSON.stringify(body) } : {},
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok) throw new Error("Spa service could not be saved");
+  if (response.status === 204) return [];
+  return response.json();
+};
+const callRpc = async (name, args) => {
+  const { supabaseUrl } = configuration$3();
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: serviceHeaders$2(true),
+    body: JSON.stringify(args),
+    signal: AbortSignal.timeout(15e3)
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw Object.assign(new Error(typeof result === "object" && result && "message" in result ? result.message : "Spa request could not be completed"), { status: 400 });
+  return result;
+};
+const getUserId = async (authorization) => {
+  if (!authorization?.startsWith("Bearer ")) throw Object.assign(new Error("Authentication is required"), { status: 401 });
+  const { supabaseUrl, supabaseAnonKey } = configuration$3();
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, Authorization: authorization }, signal: AbortSignal.timeout(1e4) });
+  if (!response.ok) throw Object.assign(new Error("Your sign-in session has expired"), { status: 401 });
+  const user = await response.json();
+  if (!user.id) throw Object.assign(new Error("Your sign-in session could not be verified"), { status: 401 });
+  return user.id;
+};
+const requireHotelManager = async (request) => {
+  const tenant = await resolveRequestHotelTenant(request);
+  const userId = await getUserId(request.headers.authorization);
+  const organizationId = encodeURIComponent(tenant.organizationId);
+  const encodedUserId = encodeURIComponent(userId);
+  const [profiles, memberships] = await Promise.all([
+    readService$2(`user_profiles?user_id=eq.${encodedUserId}&select=role&limit=1`),
+    readService$2(`books_memberships?organization_id=eq.${organizationId}&user_id=eq.${encodedUserId}&role=in.(owner,admin)&select=role&limit=1`)
+  ]);
+  if (profiles[0]?.role !== "manager" || !memberships[0]) throw Object.assign(new Error("Only a hotel manager can manage spa services"), { status: 403 });
+  return tenant;
+};
+const validEmail = (value) => typeof value === "string" && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const parseWeeklyHours = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Set valid weekly opening hours");
+  const output = {};
+  for (let day = 0; day < 7; day += 1) {
+    const ranges = value[String(day)];
+    if (!Array.isArray(ranges) || ranges.length > 8) throw new Error("Set valid weekly opening hours");
+    const parsed = ranges.map((range) => {
+      if (!range || typeof range !== "object") throw new Error("Set valid weekly opening hours");
+      const { open, close } = range;
+      if (typeof open !== "string" || typeof close !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(open) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(close) || close <= open) {
+        throw new Error("Opening ranges must have a start and a later closing time on the same day");
+      }
+      return { open, close };
+    }).sort((a, b) => a.open.localeCompare(b.open));
+    if (parsed.some((range, index) => index > 0 && range.open < parsed[index - 1].close)) throw new Error("Opening ranges cannot overlap");
+    output[String(day)] = parsed;
+  }
+  return output;
+};
+const validateService = (input) => {
+  const name = typeof input.name === "string" ? input.name.trim() : "";
+  const description = typeof input.description === "string" ? input.description.trim() : "";
+  const price = Number(input.price);
+  const currencyCode = typeof input.currency_code === "string" ? input.currency_code.trim().toUpperCase() : "";
+  const durationMinutes = Number(input.duration_minutes);
+  const slotIntervalMinutes = Number(input.slot_interval_minutes);
+  const capacity = Number(input.capacity);
+  const depositType = input.deposit_type;
+  const depositValue = Number(input.deposit_value);
+  const timezone = typeof input.timezone === "string" ? input.timezone.trim() : "Africa/Kampala";
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: timezone });
+  } catch {
+    throw new Error("Enter a valid hotel timezone");
+  }
+  if (!name || name.length > 120 || description.length > 2e3 || !Number.isFinite(price) || price <= 0 || !supportedCurrencies$1.has(currencyCode) || !Number.isInteger(durationMinutes) || durationMinutes < 10 || durationMinutes > 480 || !Number.isInteger(slotIntervalMinutes) || slotIntervalMinutes < 5 || slotIntervalMinutes > 240 || !Number.isInteger(capacity) || capacity < 1 || capacity > 100 || depositType !== "fixed" && depositType !== "percentage" || !Number.isFinite(depositValue) || depositValue < 0 || depositValue <= 0 || depositType === "percentage" && depositValue > 100 || depositType === "fixed" && depositValue > price) {
+    throw new Error("Enter valid spa service details");
+  }
+  return { name, description, price, currency_code: currencyCode, duration_minutes: durationMinutes, slot_interval_minutes: slotIntervalMinutes, capacity, weekly_hours: parseWeeklyHours(input.weekly_hours), deposit_type: depositType, deposit_value: depositValue, is_active: input.is_active === true };
+};
+const hashToken = (token) => createHash("sha256").update(token).digest("hex");
+const safeText$1 = (value, max) => typeof value === "string" ? value.trim().slice(0, max) : "";
+const getIp = (request) => {
+  const forwarded = request.headers["x-vercel-forwarded-for"] || request.headers["x-nf-client-connection-ip"];
+  return (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim() || request.ip || request.socket.remoteAddress || "unknown";
+};
+const returnUrl = (domain) => {
+  const value = process.env.FLUTTERWAVE_RETURN_URL;
+  if (!value) throw new Error("Flutterwave return URL is not configured");
+  const parsed = new URL(value);
+  if (parsed.protocol !== "https:" || parsed.pathname !== "/checkout/flutterwave-return") throw new Error("Flutterwave return URL must use HTTPS and target the payment return route");
+  parsed.hostname = domain;
+  return parsed.toString();
+};
+const getHotelSpaServices = async (request, response) => {
+  try {
+    const tenant = await resolveRequestHotelTenant(request);
+    const organizationId = encodeURIComponent(tenant.organizationId);
+    const [settings, services] = await Promise.all([
+      readService$2(`hotel_tenant_settings?organization_id=eq.${organizationId}&is_active=eq.true&select=timezone&limit=1`),
+      readService$2(`hotel_spa_services?organization_id=eq.${organizationId}&is_active=eq.true&select=id,name,description,price,currency_code,duration_minutes,slot_interval_minutes,capacity,weekly_hours,deposit_type,deposit_value&order=name.asc`)
+    ]);
+    response.setHeader("Cache-Control", "private, no-store");
+    response.json({ tenant: { name: tenant.name, timezone: settings[0]?.timezone || "Africa/Kampala" }, services });
+  } catch (error) {
+    response.status(error.status || 404).json({ error: error instanceof Error ? error.message : "Spa services could not be loaded" });
+  }
+};
+const getHotelSpaAvailability = async (request, response) => {
+  try {
+    const tenant = await resolveRequestHotelTenant(request);
+    const serviceId = request.query.serviceId;
+    const date = request.query.date;
+    if (typeof serviceId !== "string" || !/^[0-9a-f-]{36}$/i.test(serviceId) || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return response.status(400).json({ error: "Choose a spa service and appointment date" });
+    }
+    const slots = await callRpc("get_hotel_spa_availability", {
+      target_organization_id: tenant.organizationId,
+      target_service_id: serviceId,
+      target_date: date
+    });
+    response.setHeader("Cache-Control", "private, no-store");
+    response.json({ slots });
+  } catch (error) {
+    response.status(error.status || 503).json({ error: error instanceof Error ? error.message : "Spa availability could not be loaded" });
+  }
+};
+const getHotelSpaServicesForManagement = async (request, response) => {
+  try {
+    const tenant = await requireHotelManager(request);
+    const [services, settings] = await Promise.all([
+      readService$2(`hotel_spa_services?organization_id=eq.${encodeURIComponent(tenant.organizationId)}&select=*&order=name.asc`),
+      readService$2(`hotel_tenant_settings?organization_id=eq.${encodeURIComponent(tenant.organizationId)}&select=timezone&limit=1`)
+    ]);
+    response.setHeader("Cache-Control", "private, no-store");
+    response.json({ services, timezone: settings[0]?.timezone || "Africa/Kampala" });
+  } catch (error) {
+    response.status(error.status || 503).json({ error: error instanceof Error ? error.message : "Spa services could not be loaded" });
+  }
+};
+const saveHotelSpaService = async (request, response) => {
+  try {
+    const tenant = await requireHotelManager(request);
+    const body = request.body;
+    const values = validateService(body);
+    const timezone = typeof body.timezone === "string" ? body.timezone.trim() : "Africa/Kampala";
+    await writeService$1(`hotel_tenant_settings?organization_id=eq.${encodeURIComponent(tenant.organizationId)}`, "PATCH", { timezone, updated_at: (/* @__PURE__ */ new Date()).toISOString() });
+    if (typeof body.id === "string") {
+      const rows = await writeService$1(`hotel_spa_services?id=eq.${encodeURIComponent(body.id)}&organization_id=eq.${encodeURIComponent(tenant.organizationId)}&select=id`, "PATCH", values);
+      if (!rows.length) return response.status(404).json({ error: "Spa service was not found for this hotel" });
+    } else {
+      await writeService$1("hotel_spa_services?select=id", "POST", { ...values, organization_id: tenant.organizationId });
+    }
+    return response.json({ ok: true });
+  } catch (error) {
+    return response.status(error.status || 400).json({ error: error instanceof Error ? error.message : "Spa service could not be saved" });
+  }
+};
+const deleteHotelSpaService = async (request, response) => {
+  try {
+    const tenant = await requireHotelManager(request);
+    const id = request.body.id;
+    if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return response.status(400).json({ error: "Spa service identifier is invalid" });
+    const rows = await writeService$1(`hotel_spa_services?id=eq.${encodeURIComponent(id)}&organization_id=eq.${encodeURIComponent(tenant.organizationId)}&select=id`, "DELETE");
+    if (!rows.length) return response.status(404).json({ error: "Spa service was not found for this hotel" });
+    return response.json({ ok: true });
+  } catch (error) {
+    return response.status(error.status || 503).json({ error: error instanceof Error ? error.message : "Spa service could not be deleted" });
+  }
+};
+const createHotelSpaBooking = async (request, response) => {
+  try {
+    const tenant = await resolveRequestHotelTenant(request);
+    const body = request.body;
+    const guest = body.guest && typeof body.guest === "object" ? body.guest : {};
+    const firstName = safeText$1(guest.firstName, 100);
+    const lastName = safeText$1(guest.lastName, 100);
+    const email = safeText$1(guest.email, 254).toLowerCase();
+    const phone = safeText$1(guest.phone, 40);
+    if (!firstName || !lastName || !validEmail(email) || !phone || typeof body.serviceId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.serviceId) || typeof body.slotStart !== "string" || Number.isNaN(Date.parse(body.slotStart)) || !["pay_at_spa", "full", "deposit"].includes(String(body.paymentChoice))) {
+      return response.status(400).json({ error: "Enter your contact details and choose a spa service, time, and payment option" });
+    }
+    const forwardedAddress = getIp(request);
+    const { supabaseUrl } = configuration$3();
+    const rateKey = createHash("sha256").update(`spa:${tenant.organizationId}:${forwardedAddress}`).digest("hex");
+    const limitResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_hotel_booking_rate_limit`, {
+      method: "POST",
+      headers: serviceHeaders$2(true),
+      body: JSON.stringify({ target_rate_limit_key: rateKey }),
+      signal: AbortSignal.timeout(1e4)
+    });
+    if (!limitResponse.ok || !await limitResponse.json()) return response.status(429).json({ error: "Too many appointment attempts. Please try again later." });
+    const accessToken = randomBytes(32).toString("hex");
+    const booking = await callRpc("create_hotel_spa_booking", {
+      target_organization_id: tenant.organizationId,
+      target_service_id: body.serviceId,
+      target_guest: { first_name: firstName, last_name: lastName, email, phone },
+      target_slot_start: new Date(body.slotStart).toISOString(),
+      target_payment_choice: body.paymentChoice,
+      target_access_token_hash: hashToken(accessToken)
+    });
+    const result = booking[0];
+    if (!result) throw new Error("Spa booking was not created");
+    response.status(201).json({ ...result, accessToken });
+  } catch (error) {
+    response.status(error.status || 400).json({ error: error instanceof Error ? error.message : "Spa booking could not be created" });
+  }
+};
+const getSpaBooking = async (bookingId, accessToken) => {
+  const rows = await readService$2(`hotel_spa_bookings?id=eq.${encodeURIComponent(bookingId)}&access_token_hash=eq.${hashToken(accessToken)}&select=*`);
+  if (!rows[0]) throw Object.assign(new Error("Spa booking could not be verified"), { status: 404 });
+  return rows[0];
+};
+const verifyFlutterwaveTransaction = async (transactionId) => {
+  const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
+  if (!secretKey) throw new Error("Flutterwave payment configuration is incomplete");
+  const response = await fetch(`${paymentBaseUrl}/transactions/${encodeURIComponent(transactionId)}/verify`, { headers: { Authorization: `Bearer ${secretKey}` }, signal: AbortSignal.timeout(15e3) });
+  const payload = await response.json();
+  if (!response.ok || payload.status !== "success" || !payload.data) throw new Error("Spa payment could not be verified");
+  return payload.data;
+};
+const confirmSpaPayment = async (transactionId, txRef, booking) => {
+  const transaction = await verifyFlutterwaveTransaction(transactionId);
+  const { supabaseUrl } = configuration$3();
+  const attempts = await readService$2(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&booking_id=eq.${encodeURIComponent(String(booking.id))}&select=*`);
+  const attempt = attempts[0];
+  if (!attempt || transaction.status !== "successful" || transaction.tx_ref !== txRef || Number(transaction.amount) !== Number(attempt.amount) || Number(transaction.amount) !== Number(booking.amount_due) || transaction.currency?.toUpperCase() !== String(booking.currency_code).trim().toUpperCase()) {
+    throw new Error("Spa payment details do not match the booking");
+  }
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/confirm_hotel_spa_booking_payment`, {
+    method: "POST",
+    headers: serviceHeaders$2(true),
+    body: JSON.stringify({ target_booking_id: booking.id, target_access_token_hash: booking.access_token_hash, target_tx_ref: txRef, target_transaction_id: String(transaction.id) }),
+    signal: AbortSignal.timeout(15e3)
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) {
+    console.error("Hotel spa payment confirmation RPC failed", { bookingId: booking.id, txRef, error: result?.message || response.status });
+    throw new Error("Spa payment could not be confirmed");
+  }
+  return Array.isArray(result) ? result[0] : result;
+};
+const createHotelSpaPaymentSession = async (request, response) => {
+  let txRef;
+  try {
+    const { bookingId, accessToken } = request.body;
+    if (typeof bookingId !== "string" || typeof accessToken !== "string" || !/^[a-f0-9]{64}$/i.test(accessToken)) return response.status(400).json({ error: "Spa booking access is invalid" });
+    const booking = await getSpaBooking(bookingId, accessToken);
+    const tenant = await resolveRequestHotelTenant(request);
+    if (booking.organization_id !== tenant.organizationId) return response.status(404).json({ error: "Spa booking could not be verified" });
+    if (booking.booking_status !== "pending_payment" || new Date(String(booking.expires_at)).getTime() <= Date.now()) return response.status(409).json({ error: "Spa booking hold has expired" });
+    const paymentOptions = String(booking.currency_code).trim().toUpperCase() === "UGX" ? "card, mobilemoneyuganda" : "card";
+    txRef = `hotel-spa-${String(booking.confirmation_number)}-${randomUUID()}`;
+    const attemptRows = await callRpc("create_hotel_spa_payment_attempt", {
+      target_booking_id: booking.id,
+      target_access_token_hash: hashToken(accessToken),
+      target_tx_ref: txRef
+    });
+    const attempt = attemptRows[0];
+    if (attempt?.attempt_status === "redirected" && attempt.attempt_payment_url) return response.json({ paymentUrl: attempt.attempt_payment_url, txRef: attempt.attempt_tx_ref, bookingId });
+    txRef = attempt?.attempt_tx_ref;
+    const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (!secretKey || !txRef) throw new Error("Spa payment configuration is incomplete");
+    const paymentResponse = await fetch(`${paymentBaseUrl}/payments`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${secretKey}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        tx_ref: txRef,
+        amount: Number(attempt.amount),
+        currency: String(attempt.currency_code).trim().toUpperCase(),
+        payment_options: paymentOptions,
+        redirect_url: returnUrl(request.hostname),
+        customer: { email: booking.guest_email, name: `${booking.guest_first_name} ${booking.guest_last_name}`.trim(), phonenumber: booking.guest_phone },
+        meta: { booking_id: booking.id, confirmation_number: booking.confirmation_number, flow: "hotel-spa" },
+        customizations: { title: `${tenant.name} Spa`, description: `Spa appointment ${booking.confirmation_number}` }
+      }),
+      signal: AbortSignal.timeout(15e3)
+    });
+    const payment = await paymentResponse.json();
+    if (!paymentResponse.ok || payment.status !== "success" || !payment.data?.link) throw new Error("Flutterwave could not prepare spa checkout");
+    await writeService$1(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}`, "PATCH", { status: "redirected", payment_url: payment.data.link, updated_at: (/* @__PURE__ */ new Date()).toISOString() });
+    return response.json({ paymentUrl: payment.data.link, txRef, bookingId });
+  } catch (error) {
+    if (txRef) await writeService$1(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}`, "PATCH", { status: "failed", updated_at: (/* @__PURE__ */ new Date()).toISOString() }).catch(() => void 0);
+    return response.status(error.status || 502).json({ error: error instanceof Error ? error.message : "Spa payment could not be prepared" });
+  }
+};
+const verifyHotelSpaPayment = async (request, response) => {
+  try {
+    const { transactionId, txRef, accessToken, bookingId } = request.body;
+    if (!transactionId || typeof txRef !== "string" || typeof accessToken !== "string" || typeof bookingId !== "string") return response.status(400).json({ error: "Spa payment verification details are required" });
+    const booking = await getSpaBooking(bookingId, accessToken);
+    const tenant = await resolveRequestHotelTenant(request);
+    if (booking.organization_id !== tenant.organizationId) return response.status(404).json({ error: "Spa booking could not be verified" });
+    const confirmation = await confirmSpaPayment(String(transactionId), txRef, booking);
+    return response.json(confirmation);
+  } catch (error) {
+    console.error("Hotel spa payment verification failed", { txRef: request.body.txRef, error: error instanceof Error ? error.message : "unknown error" });
+    return response.status(error.status || 400).json({ error: error instanceof Error ? error.message : "Spa payment could not be verified" });
+  }
+};
+const cancelHotelSpaPayment = async (request, response) => {
+  try {
+    const { txRef, status, accessToken } = request.body;
+    if (typeof txRef !== "string" || !["cancelled", "failed"].includes(String(status)) || typeof accessToken !== "string") return response.status(400).json({ error: "Spa payment status is invalid" });
+    const attempts = await readService$2(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&select=*`);
+    const attempt = attempts[0];
+    if (!attempt) return response.status(404).json({ error: "Spa payment attempt was not found" });
+    const booking = await getSpaBooking(String(attempt.booking_id), accessToken);
+    const tenant = await resolveRequestHotelTenant(request);
+    if (booking.organization_id !== tenant.organizationId) return response.status(404).json({ error: "Spa payment attempt was not found" });
+    if (["initiated", "redirected"].includes(String(attempt.status))) await writeService$1(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}`, "PATCH", { status, updated_at: (/* @__PURE__ */ new Date()).toISOString() });
+    return response.json({ ok: true });
+  } catch (error) {
+    return response.status(error.status || 400).json({ error: error instanceof Error ? error.message : "Spa payment status could not be saved" });
+  }
+};
+const verifyHotelSpaPaymentForWebhook = async (transactionId, txRef) => {
+  const attempts = await readService$2(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&select=booking_id`);
+  if (!attempts[0]) throw new Error("Spa payment attempt was not found");
+  const bookings = await readService$2(`hotel_spa_bookings?id=eq.${encodeURIComponent(String(attempts[0].booking_id))}&select=*`);
+  if (!bookings[0]) throw new Error("Spa booking was not found");
+  return confirmSpaPayment(transactionId, txRef, bookings[0]);
+};
 const flutterwaveBaseUrl = "https://api.flutterwave.com/v3";
 const supportedCurrencies = /* @__PURE__ */ new Set(["USD", "UGX", "EUR", "GBP", "KES", "TZS", "RWF"]);
 const fxProvider = "open.er-api.com";
@@ -1361,7 +1713,7 @@ class HotelBookingError extends Error {
     this.status = status;
   }
 }
-const configuration$1 = () => {
+const configuration$2 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1371,7 +1723,7 @@ const configuration$1 = () => {
   return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
 };
 const serviceHeaders$1 = (json = false) => {
-  const { supabaseAnonKey, serviceRoleKey } = configuration$1();
+  const { supabaseAnonKey, serviceRoleKey } = configuration$2();
   return {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${serviceRoleKey}`,
@@ -1379,13 +1731,13 @@ const serviceHeaders$1 = (json = false) => {
   };
 };
 const readService$1 = async (path2) => {
-  const { supabaseUrl } = configuration$1();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, { headers: serviceHeaders$1() });
   if (!response.ok) throw new Error("Unable to read hotel booking data");
   return response.json();
 };
 const writeService = async (path2, method, body, prefer = "return=minimal") => {
-  const { supabaseUrl } = configuration$1();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method,
     headers: { ...serviceHeaders$1(true), Prefer: prefer },
@@ -1395,7 +1747,7 @@ const writeService = async (path2, method, body, prefer = "return=minimal") => {
   return response;
 };
 const callServiceRpc$1 = async (name, args) => {
-  const { supabaseUrl } = configuration$1();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: { ...serviceHeaders$1(true), Prefer: "return=representation" },
@@ -1440,7 +1792,7 @@ const safeText = (value, maxLength) => typeof value === "string" ? value.trim().
 const resolveAuthenticatedUserId = async (authorization) => {
   if (!authorization) return null;
   if (!authorization.startsWith("Bearer ")) throw new HotelBookingError("Your sign-in session is invalid", 401);
-  const { supabaseUrl, supabaseAnonKey } = configuration$1();
+  const { supabaseUrl, supabaseAnonKey } = configuration$2();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, Authorization: authorization } });
   if (!response.ok) throw new HotelBookingError("Your sign-in session has expired. Sign in again and retry.", 401);
   const user = await response.json();
@@ -1748,7 +2100,17 @@ const handleHotelBookingWebhook = async (request, response) => {
   const signatureIsValid = Boolean(signatureBytes && secretBytes && signatureBytes.length === secretBytes.length && timingSafeEqual(signatureBytes, secretBytes));
   if (!signatureIsValid) return response.status(401).end();
   const payload = request.body;
-  if (payload.event !== "charge.completed" || !payload.data?.id || !payload.data.tx_ref?.startsWith("hotel-")) return response.status(200).end();
+  if (payload.event !== "charge.completed" || !payload.data?.id) return response.status(200).end();
+  if (payload.data.tx_ref?.startsWith("hotel-spa-")) {
+    try {
+      await verifyHotelSpaPaymentForWebhook(String(payload.data.id), payload.data.tx_ref);
+      return response.status(200).end();
+    } catch (error) {
+      console.error("Hotel spa payment webhook verification failed", error);
+      return response.status(500).end();
+    }
+  }
+  if (!payload.data.tx_ref?.startsWith("hotel-")) return response.status(200).end();
   try {
     await verifyHotelPayment(String(payload.data.id), payload.data.tx_ref);
     return response.status(200).end();
@@ -1767,7 +2129,7 @@ const getExchangeRates = async (_request, response) => {
     response.status(503).json({ error: "Exchange rates are temporarily unavailable" });
   }
 };
-const getConfiguration = () => {
+const getConfiguration$1 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1778,7 +2140,7 @@ const getConfiguration = () => {
 };
 const getAuthenticatedUserId$1 = async (authorization) => {
   if (!authorization?.startsWith("Bearer ")) return null;
-  const { supabaseUrl, supabaseAnonKey } = getConfiguration();
+  const { supabaseUrl, supabaseAnonKey } = getConfiguration$1();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: supabaseAnonKey, Authorization: authorization },
     signal: AbortSignal.timeout(1e4)
@@ -1805,7 +2167,7 @@ const createMenuOrder = async (request, response) => {
       return response.status(400).json({ error: "Tip amount is invalid." });
     }
     const tenant = await resolveRequestHotelTenant(request);
-    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = getConfiguration();
+    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = getConfiguration$1();
     const rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/create_menu_order_for_tenant`, {
       method: "POST",
       headers: {
@@ -1840,6 +2202,130 @@ const createMenuOrder = async (request, response) => {
     return response.status(503).json({
       error: error instanceof Error ? error.message : "The order could not be created."
     });
+  }
+};
+const getConfiguration = () => {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) throw new Error("Hotel newsletter configuration is incomplete");
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
+};
+const submitHotelNewsletter = async (request, response) => {
+  try {
+    const tenant = await resolveRequestHotelTenant(request);
+    const body = request.body;
+    if (body.operation !== "unsubscribe" && (typeof body.email !== "string" || body.consent !== true)) {
+      return response.status(400).json({ error: "Enter your email and confirm consent to receive hotel offers" });
+    }
+    if (body.operation === "unsubscribe" && typeof body.token !== "string") {
+      return response.status(400).json({ error: "Unsubscribe link is invalid" });
+    }
+    const { serviceRoleKey } = getConfiguration();
+    const origin = new URL(request.get("origin") || `https://${request.hostname}`);
+    const originTenant = await resolveRequestHotelTenant({ hostname: origin.hostname, headers: request.headers });
+    if (originTenant.organizationId !== tenant.organizationId) {
+      console.warn("Hotel newsletter origin resolved to a different tenant", { requestOrganizationId: tenant.organizationId, originOrganizationId: originTenant.organizationId, origin: origin.hostname });
+      return response.status(403).json({ error: "This site address is not registered to the same hotel as its newsletter." });
+    }
+    const unsubscribeUrl = new URL("/offers", origin);
+    const payload = { ...body, organizationId: tenant.organizationId, unsubscribeUrl: unsubscribeUrl.toString() };
+    const timestamp = String(Date.now());
+    const signature = createHmac("sha256", serviceRoleKey).update(`${timestamp}.${JSON.stringify(payload)}`).digest("hex");
+    const functionUrl = process.env.HOTEL_NEWSLETTER_FUNCTION_URL || "https://us-central1-speshio.cloudfunctions.net/hotelOffersNewsletter";
+    const result = await fetch(functionUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-hotel-newsletter-timestamp": timestamp, "x-hotel-newsletter-signature": signature },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(45e3)
+    });
+    const resultBody = await result.json().catch(() => null);
+    if (!result.ok || !resultBody?.ok) return response.status(result.status >= 400 && result.status < 500 ? result.status : 503).json({ error: resultBody?.error || "Newsletter service is temporarily unavailable" });
+    response.setHeader("Cache-Control", "private, no-store");
+    return response.json(resultBody);
+  } catch (error) {
+    return response.status(503).json({ error: error instanceof Error ? error.message : "Newsletter service is temporarily unavailable" });
+  }
+};
+const configuration$1 = () => {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) throw new Error("Attachment download configuration is incomplete");
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey };
+};
+const trustedHosts = () => [process.env.B2_PUBLIC_URL, process.env.VITE_B2_PUBLIC_URL, process.env.B2_ENDPOINT].filter((value) => Boolean(value)).flatMap((value) => {
+  try {
+    return [new URL(value).hostname];
+  } catch {
+    return [];
+  }
+});
+const safeFilename = (value) => value.split(/[\\/]/).pop().replace(/[\r\n";]/g, "_") || "attachment";
+const downloadAttachment = async (request, response) => {
+  const attachmentId = request.params.attachmentId;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attachmentId)) {
+    response.status(400).json({ error: "Invalid attachment" });
+    return;
+  }
+  const authorization = request.headers.authorization;
+  if (!authorization?.startsWith("Bearer ")) {
+    response.status(401).json({ error: "Authentication is required" });
+    return;
+  }
+  try {
+    const { supabaseUrl, supabaseAnonKey } = configuration$1();
+    const authHeaders = { apikey: supabaseAnonKey, Authorization: authorization };
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: authHeaders,
+      signal: AbortSignal.timeout(1e4)
+    });
+    if (!userResponse.ok) {
+      response.status(401).json({ error: "Your sign-in session has expired" });
+      return;
+    }
+    const query = new URLSearchParams({
+      id: `eq.${attachmentId}`,
+      select: "b2_url,filename,original_name,mime_type",
+      limit: "1"
+    });
+    const attachmentResponse = await fetch(`${supabaseUrl}/rest/v1/attachments?${query}`, {
+      headers: authHeaders,
+      signal: AbortSignal.timeout(1e4)
+    });
+    if (!attachmentResponse.ok) {
+      response.status(404).json({ error: "Attachment not found" });
+      return;
+    }
+    const attachments = await attachmentResponse.json();
+    const attachment = attachments[0];
+    if (!attachment) {
+      response.status(404).json({ error: "Attachment not found" });
+      return;
+    }
+    const fileUrl = new URL(attachment.b2_url);
+    const allowedHosts = trustedHosts();
+    if (fileUrl.protocol !== "https:" || !(allowedHosts.includes(fileUrl.hostname) || fileUrl.hostname.endsWith(".backblazeb2.com"))) {
+      response.status(400).json({ error: "Attachment URL is not trusted" });
+      return;
+    }
+    const fileResponse = await fetch(fileUrl, {
+      redirect: "error",
+      signal: AbortSignal.timeout(6e4)
+    });
+    if (!fileResponse.ok || !fileResponse.body) {
+      response.status(502).json({ error: "Attachment could not be downloaded" });
+      return;
+    }
+    const filename = safeFilename(attachment.original_name || attachment.filename);
+    response.setHeader("Cache-Control", "private, no-store");
+    response.setHeader("Content-Type", attachment.mime_type || "application/octet-stream");
+    response.setHeader("Content-Disposition", `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    const contentLength = fileResponse.headers.get("content-length");
+    if (contentLength) response.setHeader("Content-Length", contentLength);
+    Readable.fromWeb(fileResponse.body).pipe(response);
+  } catch {
+    if (!response.headersSent) response.status(502).json({ error: "Attachment could not be downloaded" });
+    else response.destroy();
   }
 };
 const configuration = () => {
@@ -2113,6 +2599,7 @@ function createServer() {
   app2.get("/api/ping", (_req, res) => {
     res.json({ message: "Hello from Express server v2!" });
   });
+  app2.get("/api/attachments/:attachmentId/download", downloadAttachment);
   app2.get("/api/demo", handleDemo);
   app2.get("/api/platform/admin-status", getPlatformAdminStatus);
   app2.get("/api/platform/hotels", getPlatformHotels);
@@ -2125,6 +2612,16 @@ function createServer() {
   app2.post("/api/hotel-complaints", submitHotelComplaint);
   app2.get("/api/hotel-booking-data", getPublicHotelBookingData);
   app2.get("/api/hotel-offers", getPublicHotelOffers);
+  app2.post("/api/hotel-newsletter", submitHotelNewsletter);
+  app2.get("/api/hotel-spa/services", getHotelSpaServices);
+  app2.get("/api/hotel-spa/availability", getHotelSpaAvailability);
+  app2.get("/api/hotel-spa/manage", getHotelSpaServicesForManagement);
+  app2.post("/api/hotel-spa/manage", saveHotelSpaService);
+  app2.delete("/api/hotel-spa/manage", deleteHotelSpaService);
+  app2.post("/api/hotel-spa/bookings", createHotelSpaBooking);
+  app2.post("/api/payments/hotel-spa/session", createHotelSpaPaymentSession);
+  app2.post("/api/payments/hotel-spa/verify", verifyHotelSpaPayment);
+  app2.post("/api/payments/hotel-spa/cancel", cancelHotelSpaPayment);
   app2.get("/api/hotel-offers/manage/access", checkHotelOfferManagementAccess);
   app2.get("/api/hotel-offers/manage", getHotelOffersForManagement);
   app2.post("/api/hotel-offers/manage", saveHotelOffer);

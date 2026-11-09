@@ -1,36 +1,21 @@
 import React, { useState } from "react";
 import { TaskEvidenceSubmission } from "../../../../lib/supabase";
-import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
+import FullscreenMediaViewer from "../../../../components/FullscreenMediaViewer";
 
 interface EvidenceGalleryProps {
   evidenceSubmissions: TaskEvidenceSubmission[];
 }
 
-const isPdfOrDocument = (filename?: string): boolean => {
-  if (!filename) return false;
-  const lowerName = filename.toLowerCase();
-  return lowerName.endsWith('.pdf') || lowerName.endsWith('.doc') || lowerName.endsWith('.docx');
-};
-
 const EvidenceGallery: React.FC<EvidenceGalleryProps> = ({ evidenceSubmissions }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const selectedEvidence = selectedIndex !== null ? evidenceSubmissions[selectedIndex] : null;
-
-  const handleNext = () => {
-    if (selectedIndex !== null && selectedIndex < evidenceSubmissions.length - 1) {
-      setSelectedIndex(selectedIndex + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (selectedIndex !== null && selectedIndex > 0) {
-      setSelectedIndex(selectedIndex - 1);
-    }
-  };
-
-  const handleClose = () => {
-    setSelectedIndex(null);
-  };
+  const viewerItems = evidenceSubmissions.map((evidence) => ({
+    url: evidence.attachments?.b2_url || "",
+    type: evidence.attachments?.file_type || "file",
+    name: evidence.attachments?.original_name || "Evidence",
+    description: evidence.description,
+    fileSize: evidence.attachments?.file_size,
+    footerLabel: `Submitted: ${new Date(evidence.submitted_at).toLocaleString()}`,
+  }));
 
   // Separate evidence by type for better organization
   const images = evidenceSubmissions.filter((e) => e.attachments?.file_type === "image");
@@ -132,117 +117,11 @@ const EvidenceGallery: React.FC<EvidenceGalleryProps> = ({ evidenceSubmissions }
         )}
       </div>
 
-      {/* Full-Page Viewer */}
-      {selectedEvidence && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col">
-          {/* Header */}
-          <div className="bg-black border-b border-gray-700 p-4 flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-white font-medium">
-                {selectedEvidence.evidence_type.toUpperCase()}
-              </p>
-              {selectedEvidence.description && (
-                <p className="text-sm text-gray-400">{selectedEvidence.description}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white text-sm mr-4">
-                {selectedIndex! + 1} / {evidenceSubmissions.length}
-              </span>
-              <button
-                onClick={handleClose}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
-            {selectedEvidence.attachments?.file_type === "image" ? (
-              <img
-                src={selectedEvidence.attachments.b2_url}
-                alt={selectedEvidence.description || "Evidence"}
-                className="max-w-full max-h-full object-contain"
-              />
-            ) : selectedEvidence.attachments?.file_type === "video" ? (
-              <video
-                src={selectedEvidence.attachments.b2_url}
-                controls
-                autoPlay
-                className="max-w-full max-h-full"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                {isPdfOrDocument(selectedEvidence.attachments?.original_name) ? (
-                  <>
-                    <iframe
-                      src={`${selectedEvidence.attachments?.b2_url}#toolbar=0`}
-                      className="w-full h-full border-0"
-                      title={selectedEvidence.attachments?.original_name}
-                    />
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/80 px-4 py-2 rounded">
-                      <a
-                        href={selectedEvidence.attachments?.b2_url}
-                        download
-                        className="inline-flex items-center gap-2 text-sheraton-gold hover:text-white transition-colors"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download
-                      </a>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">📄</div>
-                    <p className="text-white text-lg mb-2">
-                      {selectedEvidence.attachments?.original_name}
-                    </p>
-                    <p className="text-gray-400 mb-6">
-                      {(selectedEvidence.attachments?.file_size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    <a
-                      href={selectedEvidence.attachments?.b2_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-sheraton-gold text-sheraton-navy rounded-lg font-semibold hover:bg-opacity-90 transition-all"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Footer Navigation */}
-          <div className="bg-black border-t border-gray-700 p-4 flex items-center justify-between">
-            <button
-              onClick={handlePrev}
-              disabled={selectedIndex === 0}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </button>
-
-            <div className="flex-1 text-center">
-              <p className="text-gray-400 text-sm">
-                Submitted: {new Date(selectedEvidence.submitted_at).toLocaleString()}
-              </p>
-            </div>
-
-            <button
-              onClick={handleNext}
-              disabled={selectedIndex === evidenceSubmissions.length - 1}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-6 h-6 text-white" />
-            </button>
-          </div>
-        </div>
-      )}
+      <FullscreenMediaViewer
+        items={viewerItems}
+        selectedIndex={selectedIndex}
+        onSelectedIndexChange={setSelectedIndex}
+      />
     </>
   );
 };

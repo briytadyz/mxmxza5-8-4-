@@ -15,7 +15,7 @@ const TasksPageHeader: React.FC<TasksPageHeaderProps> = ({
     <div className="text-center mb-12">
       <div className="flex items-center justify-center mb-4">
         <CheckSquare className="h-8 w-8 text-sheraton-gold mr-2" />
-        <Badge className="bg-sheraton-gold text-sheraton-navy px-4 py-2">
+        <Badge className="bg-sheraton-gold text-sheraton-navy dark:text-slate-900 px-4 py-2">
           Task Management
         </Badge>
       </div>
