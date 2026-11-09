@@ -292,52 +292,50 @@ export const TodoItem: React.FC<TodoItemProps> = ({
           </div>
         )}
 
-        {/* Status Update Section */}
-        <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Task Status
-            </p>
-            <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 capitalize`}>
-              {todo.priority} Priority
-            </Badge>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Select value={status} onValueChange={(value) => {
-                if (value === "pending" || value === "in_progress" || value === "completed") void handleStatusChange(value);
-              }} disabled={isUpdating || status === "completed"}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Pending</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="in_progress">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                      <span>In Progress</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              {isUpdating && (
-                <Loader className="h-4 w-4 animate-spin text-sheraton-gold" />
-              )}
+        {status !== "completed" && (
+          <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Task Status
+              </p>
+              <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 capitalize`}>
+                {todo.priority} Priority
+              </Badge>
             </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Select value={status} onValueChange={(value) => {
+                  if (value === "pending" || value === "in_progress" || value === "completed") void handleStatusChange(value);
+                }} disabled={isUpdating}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        <span>Pending</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="in_progress">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                        <span>In Progress</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
 
-            {status !== "completed" && (
+                {isUpdating && (
+                  <Loader className="h-4 w-4 animate-spin text-sheraton-gold" />
+                )}
+              </div>
               <p className="text-xs text-gray-500 dark:text-slate-400 italic">
                 Once you complete the work, use the Reports tab to submit evidence and request approval from the manager.
               </p>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Completion Info */}
         {status === "completed" && todo.completed_at && (
