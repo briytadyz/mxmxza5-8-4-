@@ -36,6 +36,7 @@ interface AttachmentListProps {
   compact?: boolean;
   popupPlacement?: "top" | "bottom" | "auto";
   popupAllAttachments?: boolean;
+  popupAlignment?: "trigger" | "container";
 }
 
 // Get icon based on file extension or fileType
@@ -99,7 +100,7 @@ const getFileExtension = (fileName: string) => {
   return fileName.split(".").pop()?.toUpperCase() || "FILE";
 };
 
-const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom", popupAllAttachments = false }) => {
+const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom", popupAllAttachments = false, popupAlignment = "trigger" }) => {
   const [expanded, setExpanded] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [effectivePlacement, setEffectivePlacement] = useState<"top" | "bottom">(popupPlacement === "top" ? "top" : "bottom");
@@ -116,10 +117,15 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       const trigger = triggerRef.current;
       if (!trigger) return;
 
-      const bounds = trigger.getBoundingClientRect();
+      const triggerBounds = trigger.getBoundingClientRect();
+      const containerBounds = popupAlignment === "container"
+        ? trigger.closest("[data-attachment-popup-container]")?.getBoundingClientRect()
+        : null;
+      const bounds = containerBounds || triggerBounds;
+      const popupParentLeft = popupRef.current?.getBoundingClientRect().left ?? triggerBounds.left;
       const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
-      const spaceAbove = Math.max(0, bounds.top - Math.max(12, headerBottom + 12));
-      const spaceBelow = Math.max(0, window.innerHeight - bounds.bottom - 12);
+      const spaceAbove = Math.max(0, triggerBounds.top - Math.max(12, headerBottom + 12));
+      const spaceBelow = Math.max(0, window.innerHeight - triggerBounds.bottom - 12);
       const placement = popupPlacement === "auto"
         ? spaceAbove >= spaceBelow ? "top" : "bottom"
         : popupPlacement;
@@ -129,7 +135,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       setEffectivePlacement(placement);
       setPopupMaxHeight(Math.max(1, Math.min(448, placement === "top" ? spaceAbove : spaceBelow)));
       setPopupWidth(width);
-      setPopupOffsetX(left - bounds.left);
+      setPopupOffsetX(left - popupParentLeft);
     };
 
     const handlePointerDown = (event: PointerEvent) => {

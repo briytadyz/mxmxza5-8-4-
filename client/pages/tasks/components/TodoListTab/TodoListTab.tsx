@@ -151,6 +151,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               <Card
                 key={task.id}
                 className={`${getStatusColor(task.status)} rounded-xl`}
+                data-attachment-popup-container
               >
                 <CardContent className="p-5 sm:p-6">
                   <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
@@ -196,6 +197,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                         compact={true}
                         popupPlacement="auto"
                         popupAllAttachments={true}
+                        popupAlignment="container"
                       />
                     )}
                     <Badge className={`${getPriorityColor(task.priority)} ml-auto flex-shrink-0 capitalize`}>
