@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "@supabase/supabase-js": "^2.104.1",
     "csv-parse": "^5.6.0",
     "firebase-functions": "^6.3.2",

@@ -14,6 +14,8 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import MuxVideoPlayer from "./MuxVideoPlayer";
 import FullscreenMediaViewer, { type FullscreenMediaItem } from "./FullscreenMediaViewer";
+import { toast } from "../hooks/use-toast";
+import { supabase } from "../lib/supabase";
 
 interface Attachment {
   id?: string;
@@ -191,39 +193,34 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
     fileSize: getFileSizeFromAttachment(attachment),
   }));
 
-  const handleDownload = (attachment: Attachment) => {
-    const fileName = getFileNameFromAttachment(attachment);
-    const safeFileName = fileName.replace(/[\\/]/g, "_").replace(/[\r\n";]/g, "_") || "attachment";
-    const fileUrl = getFileUrlFromAttachment(attachment);
-    if (!fileUrl) return;
+  const handleDownload = async (attachment: Attachment) => {
+    const attachmentId = attachment.attachmentId || attachment.id;
+    if (!attachmentId) return;
 
-    let downloadUrl: URL;
     try {
-      downloadUrl = new URL(fileUrl);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Authentication is required");
+
+      const response = await fetch("https://us-central1-speshio.cloudfunctions.net/createAttachmentDownloadUrl", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ attachmentId }),
+      });
+      if (!response.ok) throw new Error("Download request failed");
+
+      const { url } = await response.json() as { url: string };
+      window.location.assign(url);
     } catch {
-      return;
+      toast({
+        title: "Download failed",
+        description: "Unable to download this attachment.",
+        variant: "destructive",
+      });
     }
-
-    const configuredHost = import.meta.env.VITE_B2_PUBLIC_URL
-      ? new URL(import.meta.env.VITE_B2_PUBLIC_URL).hostname
-      : "";
-    if (downloadUrl.protocol !== "https:" ||
-      !(downloadUrl.hostname.endsWith(".backblazeb2.com") || downloadUrl.hostname === configuredHost)) return;
-
-    const isNativeB2Url = downloadUrl.pathname.split("/").filter(Boolean)[0] === "file";
-    const dispositionParameter = isNativeB2Url ? "b2ContentDisposition" : "response-content-disposition";
-    downloadUrl.searchParams.set(
-      dispositionParameter,
-      `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`,
-    );
-
-    const link = document.createElement("a");
-    link.href = downloadUrl.toString();
-    link.download = safeFileName;
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
   };
 
   if (compact) {
