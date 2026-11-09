@@ -150,54 +150,50 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
             {getUnrespondedAssignedTasks().map((task) => (
               <Card
                 key={task.id}
-                className="border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 hover:shadow-lg transition-shadow overflow-hidden"
+                className={`${getStatusColor(task.status)} rounded-xl`}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4 pb-4 border-b border-orange-200 dark:border-orange-800">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="p-2 bg-white dark:bg-slate-800 rounded-lg flex-shrink-0">
-                        <StatusIcon status={task.status} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-sheraton-gold uppercase tracking-wide mb-1">
-                          {task.id}
-                        </p>
-                        <h3 className="font-semibold text-sheraton-navy line-clamp-2">
-                          {task.title}
-                        </h3>
-                      </div>
+                <CardContent className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                        Task #{task.id.slice(0, 8)}
+                      </p>
+                      <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy dark:text-slate-100">
+                        {task.title}
+                      </h3>
                     </div>
-                    <Badge className={getPriorityColor(task.priority)}>
-                      {task.priority}
-                    </Badge>
+                    <div className="flex flex-shrink-0 items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                      <StatusIcon status={task.status} />
+                      <span>{task.status === "todo" ? "To Do" : getStatusLabel(task.status)}</span>
+                    </div>
                   </div>
 
-                  <p className="text-sm text-gray-700 dark:text-slate-200 line-clamp-2 mb-4">
+                  <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                     {task.description}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {task.due_date && (
-                      <div className="p-2 bg-white dark:bg-slate-800 rounded border border-orange-200 dark:border-orange-800">
-                        <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mb-1">DUE</p>
-                        <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                          {new Date(task.due_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    {(task as any).budget && (
-                      <div className="p-2 bg-white dark:bg-slate-800 rounded border border-orange-200 dark:border-orange-800">
-                        <p className="text-xs text-gray-500 dark:text-slate-400 font-semibold mb-1">BUDGET</p>
-                        <p className="text-sm font-semibold text-green-700 dark:text-green-400">
-                          ${(task as any).budget.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  {(task.due_date || (task as any).budget) && (
+                    <div className={`mt-4 grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-4`}>
+                      {task.due_date && (
+                        <div className="min-w-0">
+                          <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Due Date</p>
+                          <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">{new Date(task.due_date).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                      {(task as any).budget && (
+                        <div className="min-w-0">
+                          <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Budget</p>
+                          <p className="mt-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">${(task as any).budget.toFixed(2)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {taskAttachments.get(task.id) && taskAttachments.get(task.id)!.length > 0 && (
-                    <div className="mb-4 p-3 bg-white dark:bg-slate-800 rounded border border-orange-200 dark:border-orange-800">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-slate-300 mb-2">ATTACHMENTS</p>
+                    <div className={`mt-4 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-4`}>
+                      <p className={`mb-2 text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>
+                        Attachments ({taskAttachments.get(task.id)!.length})
+                      </p>
                       <div className="space-y-1">
                         {taskAttachments.get(task.id)!.map((attachment) => (
                           <a
@@ -205,23 +201,28 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                             href={attachment.publicUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-sheraton-gold hover:underline block truncate"
+                            className="block truncate text-sm text-slate-700 hover:underline dark:text-slate-200"
                             title={attachment.filename || attachment.originalName}
                           >
-                            📎 {attachment.filename || attachment.originalName}
+                            {attachment.filename || attachment.originalName}
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  <Button
-                    onClick={() => onTaskResponseOpen(task)}
-                    className="w-full sheraton-gradient text-white"
-                  >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Respond to Task
-                  </Button>
+                  <div className="mt-4 flex items-center gap-2 border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <Button
+                      onClick={() => onTaskResponseOpen(task)}
+                      className="min-w-0 flex-1 sheraton-gradient text-white"
+                    >
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Respond to Task
+                    </Button>
+                    <Badge className={`${getPriorityColor(task.priority)} flex-shrink-0 capitalize`}>
+                      {task.priority} Priority
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
             ))}
