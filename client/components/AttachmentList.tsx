@@ -190,7 +190,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
               const videoFilename = attachment.filename || '';
               return (
                 <div key={videoFilename} className="w-full">
-                  <p className="text-xs font-medium text-gray-600 mb-2">{fileName}</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-300 mb-2">{fileName}</p>
                   {videoFilename && <MuxVideoPlayer filename={videoFilename} />}
                 </div>
               );
@@ -203,19 +203,19 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
           <div ref={popupRef} className="flex items-center gap-2 relative">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900 transition-colors cursor-pointer"
             >
               <Paperclip className="h-3 w-3" />
               {otherAttachments.length} file{otherAttachments.length !== 1 ? "s" : ""}
             </button>
 
             {expanded && (
-              <div className={`absolute z-50 ${popupPlacement === "top" ? "bottom-full mb-2 left-1/2 -translate-x-1/2 w-72" : "top-full mt-2 left-0 w-80"} bg-white border border-gray-200 rounded-lg shadow-lg p-4 space-y-2`}>
+              <div className={`absolute z-50 ${popupPlacement === "top" ? "bottom-full mb-2 left-1/2 -translate-x-1/2 w-72" : "top-full mt-2 left-0 w-80"} bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg p-4 space-y-2`}>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-sm text-gray-900">Attachments</h4>
+                  <h4 className="font-semibold text-sm text-gray-900 dark:text-slate-100">Attachments</h4>
                   <button
                     onClick={() => setExpanded(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-100"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -228,22 +228,22 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                   return (
                     <div
                       key={attachment.id || attachment.attachmentId}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 text-gray-500">
+                        <div className="flex-shrink-0 text-gray-500 dark:text-slate-400">
                           {getFileIcon(fileName, fileType)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <button
                             type="button"
                             onClick={() => setPreviewIndex(otherAttachments.indexOf(attachment))}
-                            className="block w-full truncate text-left text-sm font-medium text-gray-900 hover:underline"
+                            className="block w-full truncate text-left text-sm font-medium text-gray-900 dark:text-slate-100 hover:underline"
                           >
                             {fileName}
                           </button>
                           {fileSize && (
-                            <p className="text-xs text-gray-500">{formatFileSize(fileSize)}</p>
+                            <p className="text-xs text-gray-500 dark:text-slate-400">{formatFileSize(fileSize)}</p>
                           )}
                         </div>
                       </div>
@@ -254,7 +254,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                           event.stopPropagation();
                           void handleDownload(attachment);
                         }}
-                        className="flex-shrink-0 text-gray-500 hover:text-gray-900"
+                        className="flex-shrink-0 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
                         title="Download file"
                       >
                         <Download className="h-4 w-4" />
@@ -281,7 +281,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       {/* Videos section */}
       {videos.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+          <h4 className="font-semibold text-sm text-gray-900 dark:text-slate-100 flex items-center gap-2">
             <Video className="h-4 w-4" />
             Videos ({videos.length})
           </h4>
@@ -291,7 +291,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
               const videoFilename = attachment.filename || '';
               return (
                 <div key={videoFilename} className="space-y-2">
-                  <p className="text-xs font-medium text-gray-600">{fileName}</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-slate-300">{fileName}</p>
                   {videoFilename && <MuxVideoPlayer filename={videoFilename} />}
                 </div>
               );
@@ -304,14 +304,14 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       {otherAttachments.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+            <h4 className="font-semibold text-sm text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <Paperclip className="h-4 w-4" />
               Files ({otherAttachments.length})
             </h4>
             {otherAttachments.length > 3 && (
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
               >
                 {expanded ? "Hide" : "Show"}
               </button>
@@ -319,7 +319,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
           </div>
 
           {(expanded || otherAttachments.length <= 3) && (
-            <div className="space-y-2 bg-gray-50 rounded-lg p-3">
+            <div className="space-y-2 bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
               {otherAttachments.map((attachment) => {
                 const fileName = getFileNameFromAttachment(attachment);
                 const fileSize = getFileSizeFromAttachment(attachment);
@@ -327,14 +327,14 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                 return (
                   <div
                     key={attachment.id || attachment.attachmentId}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0 p-2 bg-blue-100 text-blue-600 rounded">
+                      <div className="flex-shrink-0 p-2 bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300 rounded">
                         {getFileIcon(fileName, fileType)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
                           {fileName}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
@@ -342,7 +342,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
                             {getFileExtension(fileName)}
                           </Badge>
                           {fileSize && (
-                            <span className="text-xs text-gray-500">{formatFileSize(fileSize)}</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400">{formatFileSize(fileSize)}</span>
                           )}
                         </div>
                       </div>

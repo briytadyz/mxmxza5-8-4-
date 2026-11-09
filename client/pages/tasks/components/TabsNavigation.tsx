@@ -18,14 +18,14 @@ const TabsNavigation: React.FC<TabsNavigationProps> = ({
 
   return (
     <div className="flex justify-center mb-8">
-      <div className="bg-white rounded-lg shadow-md p-1 flex">
+      <div className="bg-white dark:bg-card border border-transparent dark:border-border rounded-lg shadow-md p-1 flex">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`px-6 py-3 rounded-md font-medium transition-colors ${activeTab === tab.id
-                ? "bg-sheraton-gold text-sheraton-navy shadow-sm"
-                : "text-gray-600 hover:text-sheraton-navy"
+                ? "bg-sheraton-gold text-slate-900 shadow-sm"
+                : "text-gray-600 dark:text-muted-foreground hover:text-sheraton-navy dark:hover:text-foreground"
               }`}
           >
             {tab.label}
