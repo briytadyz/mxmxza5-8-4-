@@ -466,10 +466,10 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
               </p>
 
               <div className={`mt-4 grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).panel} p-4`}>
-                {task.category && (
+                {task.due_date && (
                   <div className="min-w-0">
-                    <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Category</p>
-                    <p className="mt-1.5 truncate text-sm font-semibold capitalize text-slate-800 dark:text-slate-100" title={task.category}>{task.category}</p>
+                    <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Due Date</p>
+                    <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">{new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
                 )}
                 {task.assignee_name && (
@@ -478,10 +478,10 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                     <p className="mt-1.5 truncate text-sm font-semibold text-slate-800 dark:text-slate-100" title={task.assignee_name}>{task.assignee_name}</p>
                   </div>
                 )}
-                {task.due_date && (
+                {task.category && (
                   <div className="min-w-0">
-                    <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Due Date</p>
-                    <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">{new Date(task.due_date).toLocaleDateString()}</p>
+                    <p className={`text-sm font-semibold tracking-wide ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).label}`}>Category</p>
+                    <p className="mt-1.5 truncate text-sm font-semibold capitalize text-slate-800 dark:text-slate-100" title={task.category}>{task.category}</p>
                   </div>
                 )}
                 {task.estimated_time && (
