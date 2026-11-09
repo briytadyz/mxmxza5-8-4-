@@ -83,13 +83,26 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-gray-50 dark:bg-slate-800 border-l-4 border-l-gray-400";
+        return "bg-card border border-amber-300 dark:border-amber-800 border-l-4 border-l-amber-400 shadow-sm";
       case "in_progress":
-        return "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500";
+        return "bg-card border border-blue-300 dark:border-blue-800 border-l-4 border-l-blue-500 shadow-sm";
       case "completed":
-        return "bg-green-50 dark:bg-emerald-950/30 border-l-4 border-l-green-500";
+        return "bg-card border border-emerald-300 dark:border-emerald-800 border-l-4 border-l-emerald-500 shadow-sm";
       default:
-        return "bg-white dark:bg-card";
+        return "bg-card border border-slate-300 dark:border-slate-700 border-l-4 border-l-slate-400 shadow-sm";
+    }
+  };
+
+  const getMetadataTone = (status: string) => {
+    switch (status) {
+      case "pending":
+        return { panel: "bg-amber-50/70 dark:bg-amber-950/30", label: "text-amber-700 dark:text-amber-300", titleHover: "group-hover:text-amber-700 dark:group-hover:text-amber-300" };
+      case "in_progress":
+        return { panel: "bg-blue-50/70 dark:bg-blue-950/30", label: "text-blue-700 dark:text-blue-300", titleHover: "group-hover:text-blue-700 dark:group-hover:text-blue-300" };
+      case "completed":
+        return { panel: "bg-emerald-50/70 dark:bg-emerald-950/30", label: "text-emerald-700 dark:text-emerald-300", titleHover: "group-hover:text-emerald-700 dark:group-hover:text-emerald-300" };
+      default:
+        return { panel: "bg-slate-50/80 dark:bg-slate-800", label: "text-slate-500 dark:text-slate-300", titleHover: "group-hover:text-slate-600 dark:group-hover:text-slate-200" };
     }
   };
 
@@ -167,17 +180,21 @@ export const TodoItem: React.FC<TodoItemProps> = ({
 
   const isOverdue =
     todo.due_date && new Date(todo.due_date) < new Date() && status !== "completed";
+  const metadataTone = getMetadataTone(status);
 
   return (
-    <Card className={`${getStatusColor(status)} hover:shadow-md transition-shadow`}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
-            <div className="p-2 bg-white dark:bg-slate-800 rounded-lg flex-shrink-0 mt-1">
+    <Card className={`${getStatusColor(status)} group rounded-xl`}>
+      <CardHeader className="p-5 pb-4 sm:p-6 sm:pb-4">
+        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="p-2 bg-white/80 dark:bg-slate-800 rounded-lg flex-shrink-0 mt-1">
               {getStatusIcon(status)}
             </div>
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base text-sheraton-navy line-clamp-2">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                Task #{todo.task_id.slice(0, 8)}
+              </p>
+              <CardTitle className={`text-base text-sheraton-navy dark:text-slate-100 line-clamp-2 transition-colors duration-200 ${metadataTone.titleHover}`}>
                 {todo.title}
               </CardTitle>
               {todo.description && (
@@ -187,25 +204,24 @@ export const TodoItem: React.FC<TodoItemProps> = ({
               )}
             </div>
           </div>
-          <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 ml-2`}>
-            {todo.priority}
+          <Badge className={`${getPriorityColor(todo.priority)} flex-shrink-0 ml-2 capitalize`}>
+            {todo.priority} Priority
           </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Details Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+      <CardContent className="space-y-4 p-5 pt-0 sm:p-6 sm:pt-0">
+        <div className={`grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl ${metadataTone.panel} p-4`}>
           {todo.due_date && (
-            <div className="p-2 bg-white/60 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">
-                Due
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
+                Due Date
               </p>
-              <p className={`font-semibold ${isOverdue ? "text-red-600 dark:text-red-400" : "text-gray-700 dark:text-slate-200"}`}>
+              <p className={`mt-1.5 text-sm font-semibold ${isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}`}>
                 {new Date(todo.due_date).toLocaleDateString()}
               </p>
               {isOverdue && (
-                <p className="text-xs text-red-600 dark:text-red-400 font-semibold mt-1">
+                <p className="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">
                   Overdue
                 </p>
               )}
@@ -213,33 +229,33 @@ export const TodoItem: React.FC<TodoItemProps> = ({
           )}
 
           {todo.estimated_hours && (
-            <div className="p-2 bg-white/60 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
                 Est. Hours
               </p>
-              <p className="font-semibold text-gray-700 dark:text-slate-200">
+              <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {todo.estimated_hours.toFixed(1)}h
               </p>
             </div>
           )}
 
           {todo.details?.budget && (
-            <div className="p-2 bg-white/60 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
                 Budget
               </p>
-              <p className="font-semibold text-green-700 dark:text-green-400">
+              <p className="mt-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                 ${todo.details.budget.toFixed(2)}
               </p>
             </div>
           )}
 
           {todo.details?.category && (
-            <div className="p-2 bg-white/60 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">
+            <div className="min-w-0">
+              <p className={`text-sm font-semibold tracking-wide ${metadataTone.label}`}>
                 Category
               </p>
-              <p className="font-semibold text-gray-700 dark:text-slate-200 capitalize">
+              <p className="mt-1.5 text-sm font-semibold capitalize text-slate-800 dark:text-slate-100">
                 {todo.details.category}
               </p>
             </div>
@@ -248,7 +264,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({
 
         {/* Task Details from Original Task */}
         {todo.details && (
-          <div className="p-3 bg-white/70 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 space-y-2">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2 dark:border-slate-700 dark:bg-slate-800">
             {todo.details.estimated_time && (
               <div className="text-sm">
                 <span className="font-semibold text-gray-600 dark:text-slate-300">Estimated Time: </span>
