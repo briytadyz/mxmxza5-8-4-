@@ -33,7 +33,7 @@ interface Attachment {
 interface AttachmentListProps {
   attachments: Attachment[];
   compact?: boolean;
-  popupPlacement?: "top" | "bottom";
+  popupPlacement?: "top" | "bottom" | "auto";
   popupAllAttachments?: boolean;
 }
 
@@ -101,10 +101,34 @@ const getFileExtension = (fileName: string) => {
 const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = false, popupPlacement = "bottom", popupAllAttachments = false }) => {
   const [expanded, setExpanded] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [effectivePlacement, setEffectivePlacement] = useState<"top" | "bottom">(popupPlacement === "top" ? "top" : "bottom");
+  const [popupMaxHeight, setPopupMaxHeight] = useState(448);
+  const [popupWidth, setPopupWidth] = useState(320);
+  const [popupOffsetX, setPopupOffsetX] = useState(0);
   const popupRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!expanded) return;
+
+    const updatePlacement = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+
+      const bounds = trigger.getBoundingClientRect();
+      const spaceAbove = bounds.top - 12;
+      const spaceBelow = window.innerHeight - bounds.bottom - 12;
+      const placement = popupPlacement === "auto"
+        ? spaceAbove >= spaceBelow ? "top" : "bottom"
+        : popupPlacement;
+      const width = Math.min(320, window.innerWidth - 16);
+      const left = Math.max(8, Math.min(bounds.left + bounds.width / 2 - width / 2, window.innerWidth - width - 8));
+
+      setEffectivePlacement(placement);
+      setPopupMaxHeight(Math.max(120, Math.min(448, placement === "top" ? spaceAbove : spaceBelow)));
+      setPopupWidth(width);
+      setPopupOffsetX(left - bounds.left);
+    };
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!popupRef.current?.contains(event.target as Node)) {
@@ -112,9 +136,16 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
       }
     };
 
+    updatePlacement();
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [expanded]);
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [expanded, popupPlacement]);
 
   if (!attachments || attachments.length === 0) {
     return null;
@@ -203,66 +234,82 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, compact = 
         {otherAttachments.length > 0 && (
           <div ref={popupRef} className="flex items-center gap-2 relative">
             <button
+              ref={triggerRef}
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={expanded}
               onClick={() => setExpanded(!expanded)}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
             >
               <Paperclip className="h-3 w-3" />
               {otherAttachments.length} file{otherAttachments.length !== 1 ? "s" : ""}
             </button>
 
             {expanded && (
-              <div className={`absolute z-50 ${popupPlacement === "top" ? "bottom-full mb-2 left-1/2 -translate-x-1/2 w-72" : "top-full mt-2 left-0 w-80"} bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg shadow-lg p-4 space-y-2`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-sm text-gray-900 dark:text-slate-100">Attachments</h4>
+              <div
+                role="dialog"
+                aria-label="Task attachments"
+                style={{ maxHeight: popupMaxHeight, width: popupWidth, left: popupOffsetX }}
+                className={`absolute z-[100] ${effectivePlacement === "top" ? "bottom-full mb-2" : "top-full mt-2"} left-0 flex w-80 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900`}
+              >
+                <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Attachments</h4>
+                    <Badge variant="secondary" className="px-2 py-0 text-xs">{otherAttachments.length}</Badge>
+                  </div>
                   <button
+                    type="button"
+                    aria-label="Close attachments"
                     onClick={() => setExpanded(false)}
-                    className="text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-100"
+                    className="rounded-md p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                {otherAttachments.map((attachment) => {
-                  const fileName = getFileNameFromAttachment(attachment);
-                  const fileSize = getFileSizeFromAttachment(attachment);
-                  const fileType = getFileTypeFromAttachment(attachment);
-                  return (
-                    <div
-                      key={attachment.id || attachment.attachmentId}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 text-gray-500 dark:text-slate-400">
-                          {getFileIcon(fileName, fileType)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewIndex(otherAttachments.indexOf(attachment))}
-                            className="block w-full truncate text-left text-sm font-medium text-gray-900 dark:text-slate-100 hover:underline"
-                          >
-                            {fileName}
-                          </button>
-                          {fileSize && (
-                            <p className="text-xs text-gray-500 dark:text-slate-400">{formatFileSize(fileSize)}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleDownload(attachment);
-                        }}
-                        className="flex-shrink-0 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
-                        title="Download file"
+                <div className="min-h-0 space-y-2 overflow-y-auto p-3">
+                  {otherAttachments.map((attachment) => {
+                    const fileName = getFileNameFromAttachment(attachment);
+                    const fileSize = getFileSizeFromAttachment(attachment);
+                    const fileType = getFileTypeFromAttachment(attachment);
+                    return (
+                      <div
+                        key={attachment.id || attachment.attachmentId}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 transition-colors hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600 dark:hover:bg-slate-700"
                       >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                            {getFileIcon(fileName, fileType)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewIndex(otherAttachments.indexOf(attachment))}
+                              className="block w-full truncate text-left text-sm font-medium text-slate-900 hover:underline dark:text-slate-100"
+                            >
+                              {fileName}
+                            </button>
+                            {fileSize && (
+                              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{formatFileSize(fileSize)}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleDownload(attachment);
+                          }}
+                          className="h-9 w-9 shrink-0 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          title="Download file"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

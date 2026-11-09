@@ -194,7 +194,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                       <AttachmentList
                         attachments={taskAttachments.get(task.id)!}
                         compact={true}
-                        popupPlacement="top"
+                        popupPlacement="auto"
                         popupAllAttachments={true}
                       />
                     </div>
