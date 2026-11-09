@@ -2,6 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { Readable } from "node:stream";
 import { createHash, randomBytes } from "node:crypto";
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { parse } from "csv-parse";
 import { onRequest } from "firebase-functions/v2/https";
 import PDFDocument from "pdfkit";
@@ -319,6 +320,96 @@ async function updateDeliveryAudit(client: ReturnType<typeof supabase>, correlat
 }
 
 const runtimeSecrets = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_WEBHOOK_SECRET", "B2_KEY_ID", "B2_APPLICATION_KEY", "BREVO_API_KEY"];
+
+export const createAttachmentDownloadUrl = onRequest({
+  region: "us-central1",
+  cors: true,
+  secrets: ["B2_KEY_ID", "B2_APPLICATION_KEY"],
+}, async (request, response) => {
+  if (request.method !== "POST") {
+    response.status(405).json({ error: "POST required" });
+    return;
+  }
+
+  const authorization = request.header("authorization");
+  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const anonKey = request.header("apikey");
+  const attachmentId = request.body?.attachmentId;
+  if (!token || !anonKey || typeof attachmentId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attachmentId)) {
+    response.status(401).json({ error: "An authenticated attachment is required" });
+    return;
+  }
+
+  try {
+    const userClient = createClient(required("SUPABASE_URL"), anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !user) {
+      response.status(401).json({ error: "Your sign-in session has expired" });
+      return;
+    }
+
+    const { data: attachment, error: attachmentError } = await userClient
+      .from("attachments")
+      .select("filename, original_name, user_id")
+      .eq("id", attachmentId)
+      .maybeSingle();
+    if (attachmentError || !attachment) {
+      response.status(404).json({ error: "Attachment not found" });
+      return;
+    }
+
+    let canDownload = attachment.user_id === user.id;
+    if (!canDownload) {
+      const { data: taskLinks } = await userClient
+        .from("task_attachments")
+        .select("task_id")
+        .eq("attachment_id", attachmentId);
+      if (taskLinks?.length) {
+        const { data: tasks } = await userClient
+          .from("tasks")
+          .select("id")
+          .in("id", taskLinks.map(({ task_id }) => task_id));
+        canDownload = Boolean(tasks?.length);
+      }
+    }
+    if (!canDownload) {
+      const { data: complaintLinks } = await userClient
+        .from("complaint_attachments")
+        .select("complaint_id")
+        .eq("attachment_id", attachmentId);
+      if (complaintLinks?.length) {
+        const { data: complaints } = await userClient
+          .from("complaints")
+          .select("id")
+          .in("id", complaintLinks.map(({ complaint_id }) => complaint_id));
+        canDownload = Boolean(complaints?.length);
+      }
+    }
+    if (!canDownload) {
+      response.status(403).json({ error: "You cannot access this attachment" });
+      return;
+    }
+
+    const filename = (attachment.original_name || attachment.filename).split(/[\\/]/).pop()!
+      .replace(/[\r\n";]/g, "_") || "attachment";
+    const fallbackFilename = filename.replace(/[^\x20-\x7E]/g, "_");
+    const encodedFilename = encodeURIComponent(filename).replace(/[!'()*]/g, (character) =>
+      `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+    );
+    const command = new GetObjectCommand({
+      Bucket: bucket(),
+      Key: attachment.filename,
+      ResponseContentDisposition: `attachment; filename="${fallbackFilename}"; filename*=UTF-8''${encodedFilename}`,
+    });
+    const url = await getSignedUrl(b2(), command, { expiresIn: 300 });
+    response.set("Cache-Control", "private, no-store").json({ url });
+  } catch {
+    response.status(500).json({ error: "Could not prepare attachment download" });
+  }
+});
 
 export const importBankCSV = onRequest({ region: "us-central1", timeoutSeconds: 540, memory: "1GiB", secrets: runtimeSecrets }, async (request, response) => {
   const { value, raw } = jsonBody(request);

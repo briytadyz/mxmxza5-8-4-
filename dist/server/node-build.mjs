@@ -3,7 +3,6 @@ import * as express from "express";
 import express__default from "express";
 import cors from "cors";
 import { randomUUID, createHash, randomBytes, timingSafeEqual, createHmac } from "node:crypto";
-import { Readable } from "node:stream";
 import { resolveTxt } from "node:dns/promises";
 const handleDemo = (req, res) => {
   const response = {
@@ -11,7 +10,7 @@ const handleDemo = (req, res) => {
   };
   res.status(200).json(response);
 };
-const configuration$4 = () => {
+const configuration$3 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,7 +20,7 @@ const configuration$4 = () => {
   return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
 };
 const serviceHeaders$3 = (json = false) => {
-  const { supabaseAnonKey, serviceRoleKey } = configuration$4();
+  const { supabaseAnonKey, serviceRoleKey } = configuration$3();
   return {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${serviceRoleKey}`,
@@ -37,7 +36,7 @@ const resolveRequestHotelTenant = async (request) => {
   if (!hostname) throw new Error("Hotel domain is missing");
   process.env.BUILDER_PREVIEW_TENANT_ORGANIZATION_ID;
   hostname.endsWith(".projects.builder.my") || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
-  const { supabaseUrl } = configuration$4();
+  const { supabaseUrl } = configuration$3();
   const tenantResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/resolve_hotel_tenant`, {
     method: "POST",
     headers: serviceHeaders$3(true),
@@ -59,7 +58,7 @@ const resolveRequestHotelTenant = async (request) => {
 };
 const setPrivateTenantResponse = (response) => response.setHeader("Cache-Control", "private, no-store");
 const readService$3 = async (path2) => {
-  const { supabaseUrl } = configuration$4();
+  const { supabaseUrl } = configuration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     headers: serviceHeaders$3(),
     signal: AbortSignal.timeout(1e4)
@@ -68,7 +67,7 @@ const readService$3 = async (path2) => {
   return response.json();
 };
 const updateService = async (path2, body) => {
-  const { supabaseUrl } = configuration$4();
+  const { supabaseUrl } = configuration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method: "PATCH",
     headers: { ...serviceHeaders$3(true), Prefer: "return=minimal" },
@@ -79,7 +78,7 @@ const updateService = async (path2, body) => {
 };
 const hotelOfferError = (message, status) => Object.assign(new Error(message), { status });
 const writeService$2 = async (path2, method, body) => {
-  const { supabaseUrl } = configuration$4();
+  const { supabaseUrl } = configuration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method,
     headers: { ...serviceHeaders$3(true), Prefer: "return=representation" },
@@ -157,7 +156,7 @@ const validateHotelOffer = (value) => {
   };
 };
 const callTenantRpc = async (name, args) => {
-  const { supabaseUrl } = configuration$4();
+  const { supabaseUrl } = configuration$3();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: serviceHeaders$3(true),
@@ -172,7 +171,7 @@ const callTenantRpc = async (name, args) => {
 };
 const getAuthenticatedUserId$2 = async (authorization) => {
   if (!authorization?.startsWith("Bearer ")) throw new Error("Authentication is required");
-  const { supabaseUrl, supabaseAnonKey } = configuration$4();
+  const { supabaseUrl, supabaseAnonKey } = configuration$3();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: supabaseAnonKey, Authorization: authorization },
     signal: AbortSignal.timeout(1e4)
@@ -322,7 +321,7 @@ const submitHotelComplaint = async (request, response) => {
       return;
     }
     const userId = request.headers.authorization ? await getAuthenticatedUserId$2(request.headers.authorization) : null;
-    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = configuration$4();
+    const { supabaseUrl, supabaseAnonKey, serviceRoleKey } = configuration$3();
     const insertResponse = await fetch(`${supabaseUrl}/rest/v1/complaints?select=id`, {
       method: "POST",
       headers: {
@@ -1357,7 +1356,7 @@ const handleSpecialEventWebhook = async (req, res) => {
 };
 const paymentBaseUrl = "https://api.flutterwave.com/v3";
 const supportedCurrencies$1 = /* @__PURE__ */ new Set(["USD", "UGX", "EUR", "GBP", "KES", "TZS", "RWF"]);
-const configuration$3 = () => {
+const configuration$2 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1365,17 +1364,17 @@ const configuration$3 = () => {
   return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
 };
 const serviceHeaders$2 = (json = false) => {
-  const { supabaseAnonKey, serviceRoleKey } = configuration$3();
+  const { supabaseAnonKey, serviceRoleKey } = configuration$2();
   return { apikey: supabaseAnonKey, Authorization: `Bearer ${serviceRoleKey}`, ...json ? { "content-type": "application/json" } : {} };
 };
 const readService$2 = async (path2) => {
-  const { supabaseUrl } = configuration$3();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, { headers: serviceHeaders$2(), signal: AbortSignal.timeout(1e4) });
   if (!response.ok) throw new Error("Hotel spa data could not be loaded");
   return response.json();
 };
 const writeService$1 = async (path2, method, body) => {
-  const { supabaseUrl } = configuration$3();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method,
     headers: { ...serviceHeaders$2(true), Prefer: "return=representation" },
@@ -1387,7 +1386,7 @@ const writeService$1 = async (path2, method, body) => {
   return response.json();
 };
 const callRpc = async (name, args) => {
-  const { supabaseUrl } = configuration$3();
+  const { supabaseUrl } = configuration$2();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: serviceHeaders$2(true),
@@ -1400,7 +1399,7 @@ const callRpc = async (name, args) => {
 };
 const getUserId = async (authorization) => {
   if (!authorization?.startsWith("Bearer ")) throw Object.assign(new Error("Authentication is required"), { status: 401 });
-  const { supabaseUrl, supabaseAnonKey } = configuration$3();
+  const { supabaseUrl, supabaseAnonKey } = configuration$2();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, Authorization: authorization }, signal: AbortSignal.timeout(1e4) });
   if (!response.ok) throw Object.assign(new Error("Your sign-in session has expired"), { status: 401 });
   const user = await response.json();
@@ -1563,7 +1562,7 @@ const createHotelSpaBooking = async (request, response) => {
       return response.status(400).json({ error: "Enter your contact details and choose a spa service, time, and payment option" });
     }
     const forwardedAddress = getIp(request);
-    const { supabaseUrl } = configuration$3();
+    const { supabaseUrl } = configuration$2();
     const rateKey = createHash("sha256").update(`spa:${tenant.organizationId}:${forwardedAddress}`).digest("hex");
     const limitResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_hotel_booking_rate_limit`, {
       method: "POST",
@@ -1603,7 +1602,7 @@ const verifyFlutterwaveTransaction = async (transactionId) => {
 };
 const confirmSpaPayment = async (transactionId, txRef, booking) => {
   const transaction = await verifyFlutterwaveTransaction(transactionId);
-  const { supabaseUrl } = configuration$3();
+  const { supabaseUrl } = configuration$2();
   const attempts = await readService$2(`hotel_spa_payment_attempts?tx_ref=eq.${encodeURIComponent(txRef)}&booking_id=eq.${encodeURIComponent(String(booking.id))}&select=*`);
   const attempt = attempts[0];
   if (!attempt || transaction.status !== "successful" || transaction.tx_ref !== txRef || Number(transaction.amount) !== Number(attempt.amount) || Number(transaction.amount) !== Number(booking.amount_due) || transaction.currency?.toUpperCase() !== String(booking.currency_code).trim().toUpperCase()) {
@@ -1713,7 +1712,7 @@ class HotelBookingError extends Error {
     this.status = status;
   }
 }
-const configuration$2 = () => {
+const configuration$1 = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -1723,7 +1722,7 @@ const configuration$2 = () => {
   return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey, serviceRoleKey };
 };
 const serviceHeaders$1 = (json = false) => {
-  const { supabaseAnonKey, serviceRoleKey } = configuration$2();
+  const { supabaseAnonKey, serviceRoleKey } = configuration$1();
   return {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${serviceRoleKey}`,
@@ -1731,13 +1730,13 @@ const serviceHeaders$1 = (json = false) => {
   };
 };
 const readService$1 = async (path2) => {
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$1();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, { headers: serviceHeaders$1() });
   if (!response.ok) throw new Error("Unable to read hotel booking data");
   return response.json();
 };
 const writeService = async (path2, method, body, prefer = "return=minimal") => {
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$1();
   const response = await fetch(`${supabaseUrl}/rest/v1/${path2}`, {
     method,
     headers: { ...serviceHeaders$1(true), Prefer: prefer },
@@ -1747,7 +1746,7 @@ const writeService = async (path2, method, body, prefer = "return=minimal") => {
   return response;
 };
 const callServiceRpc$1 = async (name, args) => {
-  const { supabaseUrl } = configuration$2();
+  const { supabaseUrl } = configuration$1();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: { ...serviceHeaders$1(true), Prefer: "return=representation" },
@@ -1792,7 +1791,7 @@ const safeText = (value, maxLength) => typeof value === "string" ? value.trim().
 const resolveAuthenticatedUserId = async (authorization) => {
   if (!authorization) return null;
   if (!authorization.startsWith("Bearer ")) throw new HotelBookingError("Your sign-in session is invalid", 401);
-  const { supabaseUrl, supabaseAnonKey } = configuration$2();
+  const { supabaseUrl, supabaseAnonKey } = configuration$1();
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, Authorization: authorization } });
   if (!response.ok) throw new HotelBookingError("Your sign-in session has expired. Sign in again and retry.", 401);
   const user = await response.json();
@@ -2247,87 +2246,6 @@ const submitHotelNewsletter = async (request, response) => {
     return response.status(503).json({ error: error instanceof Error ? error.message : "Newsletter service is temporarily unavailable" });
   }
 };
-const configuration$1 = () => {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) throw new Error("Attachment download configuration is incomplete");
-  return { supabaseUrl: supabaseUrl.replace(/\/$/, ""), supabaseAnonKey };
-};
-const trustedHosts = () => [process.env.B2_PUBLIC_URL, process.env.VITE_B2_PUBLIC_URL, process.env.B2_ENDPOINT].filter((value) => Boolean(value)).flatMap((value) => {
-  try {
-    return [new URL(value).hostname];
-  } catch {
-    return [];
-  }
-});
-const safeFilename = (value) => value.split(/[\\/]/).pop().replace(/[\r\n";]/g, "_") || "attachment";
-const downloadAttachment = async (request, response) => {
-  const attachmentId = request.params.attachmentId;
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attachmentId)) {
-    response.status(400).json({ error: "Invalid attachment" });
-    return;
-  }
-  const authorization = request.headers.authorization;
-  if (!authorization?.startsWith("Bearer ")) {
-    response.status(401).json({ error: "Authentication is required" });
-    return;
-  }
-  try {
-    const { supabaseUrl, supabaseAnonKey } = configuration$1();
-    const authHeaders = { apikey: supabaseAnonKey, Authorization: authorization };
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: authHeaders,
-      signal: AbortSignal.timeout(1e4)
-    });
-    if (!userResponse.ok) {
-      response.status(401).json({ error: "Your sign-in session has expired" });
-      return;
-    }
-    const query = new URLSearchParams({
-      id: `eq.${attachmentId}`,
-      select: "b2_url,filename,original_name,mime_type",
-      limit: "1"
-    });
-    const attachmentResponse = await fetch(`${supabaseUrl}/rest/v1/attachments?${query}`, {
-      headers: authHeaders,
-      signal: AbortSignal.timeout(1e4)
-    });
-    if (!attachmentResponse.ok) {
-      response.status(404).json({ error: "Attachment not found" });
-      return;
-    }
-    const attachments = await attachmentResponse.json();
-    const attachment = attachments[0];
-    if (!attachment) {
-      response.status(404).json({ error: "Attachment not found" });
-      return;
-    }
-    const fileUrl = new URL(attachment.b2_url);
-    const allowedHosts = trustedHosts();
-    if (fileUrl.protocol !== "https:" || !(allowedHosts.includes(fileUrl.hostname) || fileUrl.hostname.endsWith(".backblazeb2.com"))) {
-      response.status(400).json({ error: "Attachment URL is not trusted" });
-      return;
-    }
-    const fileResponse = await fetch(fileUrl, {
-      redirect: "error",
-      signal: AbortSignal.timeout(6e4)
-    });
-    if (!fileResponse.ok || !fileResponse.body) {
-      response.status(502).json({ error: "Attachment could not be downloaded" });
-      return;
-    }
-    const filename = safeFilename(attachment.original_name || attachment.filename);
-    response.setHeader("Cache-Control", "private, no-store");
-    response.setHeader("Content-Type", attachment.mime_type || "application/octet-stream");
-    response.setHeader("Content-Disposition", `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
-    const contentLength = fileResponse.headers.get("content-length");
-    if (contentLength) response.setHeader("Content-Length", contentLength);
-    Readable.fromWeb(fileResponse.body).pipe(response);
-  } catch {
-    if (!response.headersSent) response.status(502).json({ error: "Attachment could not be downloaded" });
-    else response.destroy();
-  }
-};
 const configuration = () => {
   const url = process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -2599,7 +2517,6 @@ function createServer() {
   app2.get("/api/ping", (_req, res) => {
     res.json({ message: "Hello from Express server v2!" });
   });
-  app2.get("/api/attachments/:attachmentId/download", downloadAttachment);
   app2.get("/api/demo", handleDemo);
   app2.get("/api/platform/admin-status", getPlatformAdminStatus);
   app2.get("/api/platform/hotels", getPlatformHotels);
