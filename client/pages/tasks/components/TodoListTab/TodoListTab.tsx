@@ -31,12 +31,12 @@ import { getPriorityColor, getStatusColor, getStatusLabel } from "../../utils/ta
 import StatusIcon from "../StatusIcon";
 import { AppRole, isWorkerRole } from "../../../../lib/roles";
 
-const metadataToneByStatus: Record<string, { panel: string; label: string }> = {
-  todo: { panel: "bg-amber-50/70 dark:bg-amber-950/30", label: "text-amber-700 dark:text-amber-300" },
-  in_progress: { panel: "bg-blue-50/70 dark:bg-blue-950/30", label: "text-blue-700 dark:text-blue-300" },
-  in_review: { panel: "bg-violet-50/70 dark:bg-violet-950/30", label: "text-violet-700 dark:text-violet-300" },
-  completed: { panel: "bg-emerald-50/70 dark:bg-emerald-950/30", label: "text-emerald-700 dark:text-emerald-300" },
-  default: { panel: "bg-slate-50/80 dark:bg-slate-800", label: "text-slate-500 dark:text-slate-300" },
+const metadataToneByStatus: Record<string, { panel: string; label: string; titleHover: string }> = {
+  todo: { panel: "bg-amber-50/70 dark:bg-amber-950/30", label: "text-amber-700 dark:text-amber-300", titleHover: "group-hover:text-amber-700 dark:group-hover:text-amber-300" },
+  in_progress: { panel: "bg-blue-50/70 dark:bg-blue-950/30", label: "text-blue-700 dark:text-blue-300", titleHover: "group-hover:text-blue-700 dark:group-hover:text-blue-300" },
+  in_review: { panel: "bg-violet-50/70 dark:bg-violet-950/30", label: "text-violet-700 dark:text-violet-300", titleHover: "group-hover:text-violet-700 dark:group-hover:text-violet-300" },
+  completed: { panel: "bg-emerald-50/70 dark:bg-emerald-950/30", label: "text-emerald-700 dark:text-emerald-300", titleHover: "group-hover:text-emerald-700 dark:group-hover:text-emerald-300" },
+  default: { panel: "bg-slate-50/80 dark:bg-slate-800", label: "text-slate-500 dark:text-slate-300", titleHover: "group-hover:text-slate-600 dark:group-hover:text-slate-200" },
 };
 
 interface TodoListTabProps {
@@ -451,7 +451,7 @@ const TodoListTab: React.FC<TodoListTabProps> = ({
                       </Badge>
                     )}
                   </div>
-                  <h3 className="line-clamp-2 font-bold leading-snug text-sheraton-navy transition-colors duration-200 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300">
+                  <h3 className={`line-clamp-2 font-bold leading-snug text-sheraton-navy transition-colors duration-200 dark:text-slate-100 ${(metadataToneByStatus[task.status] || metadataToneByStatus.default).titleHover}`}>
                     {task.title}
                   </h3>
                 </div>
